@@ -1,0 +1,202 @@
+{
+  "RD-I-PaxLocationAll-logicalTable": {
+    "Alias": "RD_I_PaxLocationAll_template",
+    "DataTransforms": [
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "AssessmentNumber",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Class_of_Supply",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Location_ID",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Service",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "MEF",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "MSE",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CAP_Name",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CAP_Names",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UIC",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Day",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "flowin",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "cumflow",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Feed_Plan_ID",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "MEALS_READY_TO_EAT_MRE",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UGR_H_S_BREAKFAST",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UGR_H_S_LUNCH_DINNER",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UGR_M_BREAKFAST",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UGR_M_LUNCH_DINNER",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Feed_Plan_ID_Row",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS_Period",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Location_Name",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Region",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "TagColumnOperation": {
+          "ColumnName": "Region",
+          "Tags": [
+            {
+              "ColumnGeographicRole": "STATE"
+            }
+          ]
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Region_MEF_Lead",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "TagColumnOperation": {
+          "ColumnName": "Region_MEF_Lead",
+          "Tags": [
+            {
+              "ColumnGeographicRole": "STATE"
+            }
+          ]
+        }
+      },
+      {
+        "ProjectOperation": {
+          "ProjectedColumns": [
+            "AssessmentNumber",
+            "Class_of_Supply",
+            "Location_ID",
+            "Service",
+            "MEF",
+            "MSE",
+            "CAP_Name",
+            "CAP_Names",
+            "UIC",
+            "Day",
+            "flowin",
+            "cumflow",
+            "Feed_Plan_ID",
+            "MEALS_READY_TO_EAT_MRE",
+            "UGR_H_S_BREAKFAST",
+            "UGR_H_S_LUNCH_DINNER",
+            "UGR_M_BREAKFAST",
+            "UGR_M_LUNCH_DINNER",
+            "Feed_Plan_ID_Row",
+            "DOS_Period",
+            "Location_Name",
+            "Region",
+            "Region_MEF_Lead"
+          ]
+        }
+      }
+    ],
+    "Source": {
+      "PhysicalTableId": "RD-I-PaxLocationAll-physicalTable"
+    }
+  }
+}

@@ -1,0 +1,394 @@
+{
+    "Status": 200,
+    "DataSet": {
+        "Arn": "arn:aws:quicksight:us-east-1:548995328310:dataset/cosii-vii-embark-dataset-template",
+        "DataSetId": "cosii-vii-embark-dataset-template",
+        "Name": "cosii_vii_embark_dataset_template",
+        "CreatedTime": "2024-11-17T14:43:16.192000-05:00",
+        "LastUpdatedTime": "2024-11-17T14:43:30.452000-05:00",
+        "PhysicalTableMap": {
+            "cosii-vii-embark-physicalTable": {
+                "S3Source": {
+                    "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/cosii-vii-embark-datasource-template",
+                    "UploadSettings": {
+                        "Format": "CSV",
+                        "StartFromRow": 1,
+                        "ContainsHeader": true,
+                        "TextQualifier": "DOUBLE_QUOTE",
+                        "Delimiter": ","
+                    },
+                    "InputColumns": [
+                        {
+                            "Name": "CLASS_OF_SUPPLY",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "REGION",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "LOCATION_NAME",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "REGION_MEF_LEAD",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "COS_TYPE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "POS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UI",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "QTY",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNIT_PRICE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DIM.HEIGHT.INCHES",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DIM.LENGTH.INCHES",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DIM.WIDTH.INCHES",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ston_",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "sqft_",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "cuft_",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "teu_",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CUFT",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "SQFT",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TEUS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "WEIGHT_LBS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TOTAL_COST",
+                            "Type": "STRING"
+                        }
+                    ]
+                }
+            }
+        },
+        "LogicalTableMap": {
+            "cosii-vii-embark-logicalTable": {
+                "Alias": "cosii_vii_embark",
+                "DataTransforms": [
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "CLASS_OF_SUPPLY",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "REGION",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "LOCATION_NAME",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "REGION_MEF_LEAD",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "COS_TYPE",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "POS",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UI",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "QTY",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNIT_PRICE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DIM.HEIGHT.INCHES",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DIM.LENGTH.INCHES",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DIM.WIDTH.INCHES",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ston_",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "sqft_",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "cuft_",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "teu_",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "CUFT",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "SQFT",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TEUS",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "WEIGHT_LBS",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TOTAL_COST",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "ProjectOperation": {
+                            "ProjectedColumns": [
+                                "CLASS_OF_SUPPLY",
+                                "REGION",
+                                "LOCATION_NAME",
+                                "REGION_MEF_LEAD",
+                                "COS_TYPE",
+                                "POS",
+                                "UI",
+                                "QTY",
+                                "UNIT_PRICE",
+                                "DIM.HEIGHT.INCHES",
+                                "DIM.LENGTH.INCHES",
+                                "DIM.WIDTH.INCHES",
+                                "ston_",
+                                "sqft_",
+                                "cuft_",
+                                "teu_",
+                                "CUFT",
+                                "SQFT",
+                                "TEUS",
+                                "WEIGHT_LBS",
+                                "TOTAL_COST"
+                            ]
+                        }
+                    }
+                ],
+                "Source": {
+                    "PhysicalTableId": "cosii-vii-embark-physicalTable"
+                }
+            }
+        },
+        "OutputColumns": [
+            {
+                "Name": "CLASS_OF_SUPPLY",
+                "Type": "STRING"
+            },
+            {
+                "Name": "REGION",
+                "Type": "STRING"
+            },
+            {
+                "Name": "LOCATION_NAME",
+                "Type": "STRING"
+            },
+            {
+                "Name": "REGION_MEF_LEAD",
+                "Type": "STRING"
+            },
+            {
+                "Name": "COS_TYPE",
+                "Type": "STRING"
+            },
+            {
+                "Name": "POS",
+                "Type": "STRING"
+            },
+            {
+                "Name": "UI",
+                "Type": "STRING"
+            },
+            {
+                "Name": "QTY",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "UNIT_PRICE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "DIM.HEIGHT.INCHES",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "DIM.LENGTH.INCHES",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "DIM.WIDTH.INCHES",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "ston_",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "sqft_",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "cuft_",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "teu_",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "CUFT",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "SQFT",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "TEUS",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "WEIGHT_LBS",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "TOTAL_COST",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            }
+        ],
+        "ImportMode": "SPICE",
+        "ConsumedSpiceCapacityInBytes": 0,
+        "DataSetUsageConfiguration": {
+            "DisableUseAsDirectQuerySource": false,
+            "DisableUseAsImportedSource": false
+        }
+    },
+    "RequestId": "b77d4a01-77ab-4728-843d-df3fb238fd00"
+}

@@ -1,0 +1,92 @@
+{
+  "Locations-physicalTable": {
+    "S3Source": {
+      "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/Locations-datasource-template",
+      "UploadSettings": {
+        "Format": "CSV",
+        "StartFromRow": 1,
+        "ContainsHeader": true,
+        "TextQualifier": "DOUBLE_QUOTE",
+        "Delimiter": ","
+      },
+      "InputColumns": [
+        {
+          "Name": "Location_ID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Designated_Name",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Region",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Country",
+          "Type": "STRING"
+        },
+        {
+          "Name": "City",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Climate",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Theater",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Water_Level",
+          "Type": "STRING"
+        },
+        {
+          "Name": "MEF_Lead",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Has_Class_VI",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Parent_Location_ID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Has_EPW",
+          "Type": "STRING"
+        },
+        {
+          "Name": "EPW_Is_Percent",
+          "Type": "STRING"
+        },
+        {
+          "Name": "EPW_Value",
+          "Type": "STRING"
+        },
+        {
+          "Name": "EPW_Start_Day",
+          "Type": "STRING"
+        },
+        {
+          "Name": "EPW_Meals_Per_Day",
+          "Type": "STRING"
+        },
+        {
+          "Name": "EPW_Has_Class_VI",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Is_EPW",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Region_MEF_Lead",
+          "Type": "STRING"
+        }
+      ]
+    }
+  }
+}

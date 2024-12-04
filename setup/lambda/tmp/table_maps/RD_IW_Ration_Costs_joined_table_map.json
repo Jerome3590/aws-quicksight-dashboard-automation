@@ -1,0 +1,347 @@
+{
+    "Status": 200,
+    "DataSet": {
+        "Arn": "arn:aws:quicksight:us-east-1:548995328310:dataset/RD-IW-Ration-Costs-joined-dataset-template",
+        "DataSetId": "RD-IW-Ration-Costs-joined-dataset-template",
+        "Name": "RD_IW_Ration_Costs_joined_dataset_template",
+        "CreatedTime": "2024-08-29T11:38:29.703000-04:00",
+        "LastUpdatedTime": "2024-08-29T11:38:44.363000-04:00",
+        "PhysicalTableMap": {
+            "RD-IW-Ration-Costs-joined-physicalTable": {
+                "S3Source": {
+                    "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/RD-IW-Ration-Costs-joined-datasource-template",
+                    "UploadSettings": {
+                        "Format": "CSV",
+                        "StartFromRow": 1,
+                        "ContainsHeader": true,
+                        "TextQualifier": "DOUBLE_QUOTE",
+                        "Delimiter": ","
+                    },
+                    "InputColumns": [
+                        {
+                            "Name": "AssessmentNumber",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Class_of_Supply",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Region",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Region_MEF_Lead",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "MEF",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CAP_Name",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CAP_Names",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Location_ID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Location_Name",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DOS_Period",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Ration_Type",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Ration_Cost",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UI_Count",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Total_UI_Cost",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "POS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DOS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Period",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Sort_Index",
+                            "Type": "STRING"
+                        }
+                    ]
+                }
+            }
+        },
+        "LogicalTableMap": {
+            "RD-IW-Ration-Costs-joined-logicalTable": {
+                "Alias": "RD_IW_Ration_Costs_joined_template",
+                "DataTransforms": [
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "AssessmentNumber",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Class_of_Supply",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Region",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "TagColumnOperation": {
+                            "ColumnName": "Region",
+                            "Tags": [
+                                {
+                                    "ColumnGeographicRole": "STATE"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Region_MEF_Lead",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "TagColumnOperation": {
+                            "ColumnName": "Region_MEF_Lead",
+                            "Tags": [
+                                {
+                                    "ColumnGeographicRole": "STATE"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "MEF",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "CAP_Name",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "CAP_Names",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Location_ID",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Location_Name",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DOS_Period",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Ration_Type",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Ration_Cost",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UI_Count",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Total_UI_Cost",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "POS",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DOS",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Period",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Sort_Index",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "ProjectOperation": {
+                            "ProjectedColumns": [
+                                "AssessmentNumber",
+                                "Class_of_Supply",
+                                "Region",
+                                "Region_MEF_Lead",
+                                "MEF",
+                                "CAP_Name",
+                                "CAP_Names",
+                                "Location_ID",
+                                "Location_Name",
+                                "DOS_Period",
+                                "Ration_Type",
+                                "Ration_Cost",
+                                "UI_Count",
+                                "Total_UI_Cost",
+                                "POS",
+                                "DOS",
+                                "Period",
+                                "Sort_Index"
+                            ]
+                        }
+                    }
+                ],
+                "Source": {
+                    "PhysicalTableId": "RD-IW-Ration-Costs-joined-physicalTable"
+                }
+            }
+        },
+        "OutputColumns": [
+            {
+                "Name": "AssessmentNumber",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Class_of_Supply",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Region",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Region_MEF_Lead",
+                "Type": "STRING"
+            },
+            {
+                "Name": "MEF",
+                "Type": "STRING"
+            },
+            {
+                "Name": "CAP_Name",
+                "Type": "STRING"
+            },
+            {
+                "Name": "CAP_Names",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Location_ID",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Location_Name",
+                "Type": "STRING"
+            },
+            {
+                "Name": "DOS_Period",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Ration_Type",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Ration_Cost",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "UI_Count",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Total_UI_Cost",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "POS",
+                "Type": "STRING"
+            },
+            {
+                "Name": "DOS",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Period",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Sort_Index",
+                "Type": "INTEGER"
+            }
+        ],
+        "ImportMode": "SPICE",
+        "ConsumedSpiceCapacityInBytes": 78352,
+        "DataSetUsageConfiguration": {
+            "DisableUseAsDirectQuerySource": false,
+            "DisableUseAsImportedSource": false
+        }
+    },
+    "RequestId": "3f9e6c66-794c-43ca-adbd-fc52c7d47853"
+}

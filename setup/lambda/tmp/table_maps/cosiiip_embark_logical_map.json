@@ -1,0 +1,188 @@
+{
+  "cosiiip-embark-logicalTable": {
+    "Alias": "cosiiip_embark",
+    "DataTransforms": [
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ASSESSMENTNUMBER",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CLASS_OF_SUPPLY",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "REGION",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "LOCATION_NAME",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "REGION_MEF_LEAD",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "COS_TYPE",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "POS",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UI",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "QTY",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "POL_PKG_NSN",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "NIIN",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "NOMENCLATURE",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UNIT_PRICE",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "STON_",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "SQFT_",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CUFT_",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "TEU_",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CUFT",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "SQFT",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "TEUS",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "WEIGHT_LBS",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "STONS",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "TOTAL_COST",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "ProjectOperation": {
+          "ProjectedColumns": [
+            "ASSESSMENTNUMBER",
+            "CLASS_OF_SUPPLY",
+            "REGION",
+            "LOCATION_NAME",
+            "REGION_MEF_LEAD",
+            "COS_TYPE",
+            "POS",
+            "UI",
+            "QTY",
+            "POL_PKG_NSN",
+            "NIIN",
+            "NOMENCLATURE",
+            "UNIT_PRICE",
+            "STON_",
+            "SQFT_",
+            "CUFT_",
+            "TEU_",
+            "CUFT",
+            "SQFT",
+            "TEUS",
+            "WEIGHT_LBS",
+            "STONS",
+            "TOTAL_COST"
+          ]
+        }
+      }
+    ],
+    "Source": {
+      "PhysicalTableId": "cosiiip-embark-physicalTable"
+    }
+  }
+}

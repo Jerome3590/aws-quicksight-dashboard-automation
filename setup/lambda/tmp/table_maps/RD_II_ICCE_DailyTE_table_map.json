@@ -1,0 +1,675 @@
+{
+    "Status": 200,
+    "DataSet": {
+        "Arn": "arn:aws:quicksight:us-east-1:548995328310:dataset/RD-II-ICCE-DailyTE-dataset-template",
+        "DataSetId": "RD-II-ICCE-DailyTE-dataset-template",
+        "Name": "RD_II_ICCE_DailyTE_dataset_template",
+        "CreatedTime": "2024-08-04T00:38:35.247000-04:00",
+        "LastUpdatedTime": "2024-08-04T00:38:48.983000-04:00",
+        "PhysicalTableMap": {
+            "RD-II-ICCE-DailyTE-physicalTable": {
+                "S3Source": {
+                    "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/RD-II-ICCE-DailyTE-datasource-template",
+                    "UploadSettings": {
+                        "Format": "CSV",
+                        "StartFromRow": 1,
+                        "ContainsHeader": true,
+                        "TextQualifier": "DOUBLE_QUOTE",
+                        "Delimiter": ","
+                    },
+                    "InputColumns": [
+                        {
+                            "Name": "AssessmentNumber",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Class_of_Supply",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Location_Name",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Region_MEF_Lead",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Region",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "POS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "MEF",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "MSE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UIC",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Type",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TAMCN_Group",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TAMCN",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "NIIN",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Day",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "COLLOQUIAL_NAME",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CHILD_TAMCN",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TAM_STATUS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ITEM_EXIT_DATE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "STORES_ACCOUNT_CODE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ITEM_DESIGNATOR_CODE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "READINESS_REPORTABLE_CODE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "PREF_NIIN_IND",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "PREF_NIIN_RNK",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "EQUIP_CRIT_RNK",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CLASSOFSUPPLY",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "STANDARD_UNIT_PRICE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TE_Orig_Qty",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Mission_TE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "RD",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CAP_Name",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CAP_Names",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ILOC",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Unit_Name",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Priority",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Parent_UIC",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "AAC",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Prepo_Enabled",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "isArty",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TAMCN_5",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TARIFF_FCTR",
+                            "Type": "STRING"
+                        }
+                    ]
+                }
+            }
+        },
+        "LogicalTableMap": {
+            "RD-II-ICCE-DailyTE-logicalTable": {
+                "Alias": "RD_II_ICCE_DailyTE_template",
+                "DataTransforms": [
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "AssessmentNumber",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Class_of_Supply",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Location_Name",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Region_MEF_Lead",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "TagColumnOperation": {
+                            "ColumnName": "Region_MEF_Lead",
+                            "Tags": [
+                                {
+                                    "ColumnGeographicRole": "STATE"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Region",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "TagColumnOperation": {
+                            "ColumnName": "Region",
+                            "Tags": [
+                                {
+                                    "ColumnGeographicRole": "STATE"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "POS",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "MEF",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "MSE",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UIC",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Type",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TAMCN_Group",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TAMCN",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "NIIN",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Day",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "COLLOQUIAL_NAME",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "CHILD_TAMCN",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TAM_STATUS",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ITEM_EXIT_DATE",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "STORES_ACCOUNT_CODE",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ITEM_DESIGNATOR_CODE",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "READINESS_REPORTABLE_CODE",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "PREF_NIIN_IND",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "PREF_NIIN_RNK",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "EQUIP_CRIT_RNK",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "CLASSOFSUPPLY",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "STANDARD_UNIT_PRICE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TE_Orig_Qty",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Mission_TE",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "RD",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "CAP_Name",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "CAP_Names",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ILOC",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Unit_Name",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Priority",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Parent_UIC",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "AAC",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Prepo_Enabled",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "isArty",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TAMCN_5",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TARIFF_FCTR",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "ProjectOperation": {
+                            "ProjectedColumns": [
+                                "AssessmentNumber",
+                                "Class_of_Supply",
+                                "Location_Name",
+                                "Region_MEF_Lead",
+                                "Region",
+                                "POS",
+                                "MEF",
+                                "MSE",
+                                "UIC",
+                                "Type",
+                                "TAMCN_Group",
+                                "TAMCN",
+                                "NIIN",
+                                "Day",
+                                "COLLOQUIAL_NAME",
+                                "CHILD_TAMCN",
+                                "TAM_STATUS",
+                                "ITEM_EXIT_DATE",
+                                "STORES_ACCOUNT_CODE",
+                                "ITEM_DESIGNATOR_CODE",
+                                "READINESS_REPORTABLE_CODE",
+                                "PREF_NIIN_IND",
+                                "PREF_NIIN_RNK",
+                                "EQUIP_CRIT_RNK",
+                                "CLASSOFSUPPLY",
+                                "STANDARD_UNIT_PRICE",
+                                "TE_Orig_Qty",
+                                "Mission_TE",
+                                "RD",
+                                "CAP_Name",
+                                "CAP_Names",
+                                "ILOC",
+                                "Unit_Name",
+                                "Priority",
+                                "Parent_UIC",
+                                "AAC",
+                                "Prepo_Enabled",
+                                "isArty",
+                                "TAMCN_5",
+                                "TARIFF_FCTR"
+                            ]
+                        }
+                    }
+                ],
+                "Source": {
+                    "PhysicalTableId": "RD-II-ICCE-DailyTE-physicalTable"
+                }
+            }
+        },
+        "OutputColumns": [
+            {
+                "Name": "AssessmentNumber",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Class_of_Supply",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Location_Name",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Region_MEF_Lead",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Region",
+                "Type": "STRING"
+            },
+            {
+                "Name": "POS",
+                "Type": "STRING"
+            },
+            {
+                "Name": "MEF",
+                "Type": "STRING"
+            },
+            {
+                "Name": "MSE",
+                "Type": "STRING"
+            },
+            {
+                "Name": "UIC",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Type",
+                "Type": "STRING"
+            },
+            {
+                "Name": "TAMCN_Group",
+                "Type": "STRING"
+            },
+            {
+                "Name": "TAMCN",
+                "Type": "STRING"
+            },
+            {
+                "Name": "NIIN",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Day",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "COLLOQUIAL_NAME",
+                "Type": "STRING"
+            },
+            {
+                "Name": "CHILD_TAMCN",
+                "Type": "STRING"
+            },
+            {
+                "Name": "TAM_STATUS",
+                "Type": "STRING"
+            },
+            {
+                "Name": "ITEM_EXIT_DATE",
+                "Type": "STRING"
+            },
+            {
+                "Name": "STORES_ACCOUNT_CODE",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ITEM_DESIGNATOR_CODE",
+                "Type": "STRING"
+            },
+            {
+                "Name": "READINESS_REPORTABLE_CODE",
+                "Type": "STRING"
+            },
+            {
+                "Name": "PREF_NIIN_IND",
+                "Type": "STRING"
+            },
+            {
+                "Name": "PREF_NIIN_RNK",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "EQUIP_CRIT_RNK",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "CLASSOFSUPPLY",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "STANDARD_UNIT_PRICE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "TE_Orig_Qty",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Mission_TE",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "RD",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "CAP_Name",
+                "Type": "STRING"
+            },
+            {
+                "Name": "CAP_Names",
+                "Type": "STRING"
+            },
+            {
+                "Name": "ILOC",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Unit_Name",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Priority",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Parent_UIC",
+                "Type": "STRING"
+            },
+            {
+                "Name": "AAC",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Prepo_Enabled",
+                "Type": "STRING"
+            },
+            {
+                "Name": "isArty",
+                "Type": "STRING"
+            },
+            {
+                "Name": "TAMCN_5",
+                "Type": "STRING"
+            },
+            {
+                "Name": "TARIFF_FCTR",
+                "Type": "INTEGER"
+            }
+        ],
+        "ImportMode": "SPICE",
+        "ConsumedSpiceCapacityInBytes": 5745658,
+        "DataSetUsageConfiguration": {
+            "DisableUseAsDirectQuerySource": false,
+            "DisableUseAsImportedSource": false
+        }
+    },
+    "RequestId": "8267360e-53f6-47b6-b9b3-202c912b9748"
+}

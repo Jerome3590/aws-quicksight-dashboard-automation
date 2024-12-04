@@ -1,0 +1,356 @@
+{
+    "Status": 200,
+    "DataSet": {
+        "Arn": "arn:aws:quicksight:us-east-1:548995328310:dataset/Locations-dataset-template",
+        "DataSetId": "Locations-dataset-template",
+        "Name": "Locations_dataset_template",
+        "CreatedTime": "2024-08-29T12:48:13.355000-04:00",
+        "LastUpdatedTime": "2024-08-29T12:48:27.388000-04:00",
+        "PhysicalTableMap": {
+            "Locations-physicalTable": {
+                "S3Source": {
+                    "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/Locations-datasource-template",
+                    "UploadSettings": {
+                        "Format": "CSV",
+                        "StartFromRow": 1,
+                        "ContainsHeader": true,
+                        "TextQualifier": "DOUBLE_QUOTE",
+                        "Delimiter": ","
+                    },
+                    "InputColumns": [
+                        {
+                            "Name": "Location_ID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Designated_Name",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Region",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Country",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "City",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Climate",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Theater",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Water_Level",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "MEF_Lead",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Has_Class_VI",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Parent_Location_ID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Has_EPW",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "EPW_Is_Percent",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "EPW_Value",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "EPW_Start_Day",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "EPW_Meals_Per_Day",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "EPW_Has_Class_VI",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Is_EPW",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Region_MEF_Lead",
+                            "Type": "STRING"
+                        }
+                    ]
+                }
+            }
+        },
+        "LogicalTableMap": {
+            "Locations-logicalTable": {
+                "Alias": "Locations_template",
+                "DataTransforms": [
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Location_ID",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Designated_Name",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Region",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "TagColumnOperation": {
+                            "ColumnName": "Region",
+                            "Tags": [
+                                {
+                                    "ColumnGeographicRole": "STATE"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Country",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "City",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Climate",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Theater",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Water_Level",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "MEF_Lead",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Has_Class_VI",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Parent_Location_ID",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Has_EPW",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "EPW_Is_Percent",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "EPW_Value",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "EPW_Start_Day",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "EPW_Meals_Per_Day",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "EPW_Has_Class_VI",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Is_EPW",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Region_MEF_Lead",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "TagColumnOperation": {
+                            "ColumnName": "Region_MEF_Lead",
+                            "Tags": [
+                                {
+                                    "ColumnGeographicRole": "STATE"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "ProjectOperation": {
+                            "ProjectedColumns": [
+                                "Location_ID",
+                                "Designated_Name",
+                                "Region",
+                                "Country",
+                                "City",
+                                "Climate",
+                                "Theater",
+                                "Water_Level",
+                                "MEF_Lead",
+                                "Has_Class_VI",
+                                "Parent_Location_ID",
+                                "Has_EPW",
+                                "EPW_Is_Percent",
+                                "EPW_Value",
+                                "EPW_Start_Day",
+                                "EPW_Meals_Per_Day",
+                                "EPW_Has_Class_VI",
+                                "Is_EPW",
+                                "Region_MEF_Lead"
+                            ]
+                        }
+                    }
+                ],
+                "Source": {
+                    "PhysicalTableId": "Locations-physicalTable"
+                }
+            }
+        },
+        "OutputColumns": [
+            {
+                "Name": "Location_ID",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Designated_Name",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Region",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Country",
+                "Type": "STRING"
+            },
+            {
+                "Name": "City",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Climate",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Theater",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Water_Level",
+                "Type": "STRING"
+            },
+            {
+                "Name": "MEF_Lead",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Has_Class_VI",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Parent_Location_ID",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Has_EPW",
+                "Type": "STRING"
+            },
+            {
+                "Name": "EPW_Is_Percent",
+                "Type": "STRING"
+            },
+            {
+                "Name": "EPW_Value",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "EPW_Start_Day",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "EPW_Meals_Per_Day",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "EPW_Has_Class_VI",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Is_EPW",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Region_MEF_Lead",
+                "Type": "STRING"
+            }
+        ],
+        "ImportMode": "SPICE",
+        "ConsumedSpiceCapacityInBytes": 1953,
+        "DataSetUsageConfiguration": {
+            "DisableUseAsDirectQuerySource": false,
+            "DisableUseAsImportedSource": false
+        }
+    },
+    "RequestId": "6bf98738-3bf2-43ed-90a1-2bfad60352af"
+}

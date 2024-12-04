@@ -1,0 +1,108 @@
+{
+  "cosiiip-embark-physicalTable": {
+    "S3Source": {
+      "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/cosiiip-embark-datasource-template",
+      "UploadSettings": {
+        "Format": "CSV",
+        "StartFromRow": 1,
+        "ContainsHeader": true,
+        "TextQualifier": "DOUBLE_QUOTE",
+        "Delimiter": ","
+      },
+      "InputColumns": [
+        {
+          "Name": "ASSESSMENTNUMBER",
+          "Type": "STRING"
+        },
+        {
+          "Name": "CLASS_OF_SUPPLY",
+          "Type": "STRING"
+        },
+        {
+          "Name": "REGION",
+          "Type": "STRING"
+        },
+        {
+          "Name": "LOCATION_NAME",
+          "Type": "STRING"
+        },
+        {
+          "Name": "REGION_MEF_LEAD",
+          "Type": "STRING"
+        },
+        {
+          "Name": "COS_TYPE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "POS",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UI",
+          "Type": "STRING"
+        },
+        {
+          "Name": "QTY",
+          "Type": "STRING"
+        },
+        {
+          "Name": "POL_PKG_NSN",
+          "Type": "STRING"
+        },
+        {
+          "Name": "NIIN",
+          "Type": "STRING"
+        },
+        {
+          "Name": "NOMENCLATURE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UNIT_PRICE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "STON_",
+          "Type": "STRING"
+        },
+        {
+          "Name": "SQFT_",
+          "Type": "STRING"
+        },
+        {
+          "Name": "CUFT_",
+          "Type": "STRING"
+        },
+        {
+          "Name": "TEU_",
+          "Type": "STRING"
+        },
+        {
+          "Name": "CUFT",
+          "Type": "STRING"
+        },
+        {
+          "Name": "SQFT",
+          "Type": "STRING"
+        },
+        {
+          "Name": "TEUS",
+          "Type": "STRING"
+        },
+        {
+          "Name": "WEIGHT_LBS",
+          "Type": "STRING"
+        },
+        {
+          "Name": "STONS",
+          "Type": "STRING"
+        },
+        {
+          "Name": "TOTAL_COST",
+          "Type": "STRING"
+        }
+      ]
+    }
+  }
+}

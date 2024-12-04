@@ -1,0 +1,78 @@
+{
+    "Records": [
+        {
+            "eventID": "e408368b4ca1472d24f10fb4d4a15249",
+            "eventName": "MODIFY",
+            "eventVersion": "1.1",
+            "eventSource": "aws:dynamodb",
+            "awsRegion": "us-east-1",
+            "dynamodb": {
+                "ApproximateCreationDateTime": 1723144146,
+                "Keys": {
+                    "dataset_id": {
+                        "S": "aggregated-embark-dataset-9002"
+                    },
+                    "assessment_id": {
+                        "S": "9002"
+                    }
+                },
+                "NewImage": {
+                    "Status": {
+                        "S": "Embark_Agg_Ingested"
+                    },
+                    "Datasource_Created": {
+                        "S": "2024-08-08T19:09:04.267251"
+                    },
+                    "Status_Timestamp": {
+                        "S": "2024-08-08T19:09:06.239567"
+                    },
+                    "dataset_id": {
+                        "S": "aggregated-embark-dataset-9002"
+                    },
+                    "Ingestion_Id": {
+                        "S": "ingestion-20240808190904"
+                    },
+                    "Embark_Agg_Ingested": {
+                        "S": "2024-08-08T19:09:06.239567"
+                    },
+                    "assessment_id": {
+                        "S": "9002"
+                    },
+                    "Embark_Agg_Processed": {
+                        "S": "2024-08-08T19:09:02.996649"
+                    },
+                    "Dataset_Created": {
+                        "S": "2024-08-08T19:09:04.693123"
+                    }
+                },
+                "OldImage": {
+                    "Status": {
+                        "S": "Dataset_Created"
+                    },
+                    "Datasource_Created": {
+                        "S": "2024-08-08T19:09:04.267251"
+                    },
+                    "Status_Timestamp": {
+                        "S": "2024-08-08T19:09:04.693123"
+                    },
+                    "dataset_id": {
+                        "S": "aggregated-embark-dataset-9002"
+                    },
+                    "assessment_id": {
+                        "S": "9002"
+                    },
+                    "Embark_Agg_Processed": {
+                        "S": "2024-08-08T19:09:02.996649"
+                    },
+                    "Dataset_Created": {
+                        "S": "2024-08-08T19:09:04.693123"
+                    }
+                },
+                "SequenceNumber": "40495200000000098251219014",
+                "SizeBytes": 644,
+                "StreamViewType": "NEW_AND_OLD_IMAGES"
+            },
+            "eventSourceARN": "arn:aws:dynamodb:us-east-1:xxxxxxxxxxxx:table/imat-dashboard-datasets/stream/2024-07-31T20:40:23.377"
+        }
+    ]
+}

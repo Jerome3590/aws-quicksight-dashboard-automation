@@ -1,0 +1,409 @@
+---
+title: "AWS Step Functions"
+author: "Jerome Dixon"
+format: html
+editor: visual
+---
+
+### Step Function
+
+```{json}
+{
+  "StartAt": "CheckFile",
+  "StartAt": "CheckFile",
+  "States": {
+    "CheckFile": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.filename",
+          "StringEquals": "RD_I_POS_Pallet_Requirement.csv",
+          "Next": "InvokeCosiLambda"
+        },
+        {
+          "Variable": "$.filename",
+          "StringEquals": "RD_IW_PaxLocationAll.csv",
+          "Next": "InvokeCosiWaterLambda"
+        },
+        {
+          "Variable": "$.filename",
+          "StringEquals": "RD_II_VII_DailyTE_WithDimensions.csv",
+          "Next": "InvokeCosiiviiLambda"
+        },
+        {
+          "Variable": "$.filename",
+          "StringEquals": "RD_IIIP_POL_Pkg_NSN_Requirements_PBI.csv",
+          "Next": "InvokeCosiiipLambda"
+        },
+        {
+          "Variable": "$.filename",
+          "StringEquals": "RD_IV_Daily_Requirements.csv",
+          "Next": "InvokeCosivLambda"
+        },
+        {
+          "Variable": "$.filename",
+          "StringEquals": "RD_IX_Requirement.csv",
+          "Next": "InvokeCosixLambda"
+        },
+        {
+          "Variable": "$.filename",
+          "StringEquals": "RD_VI_POS_Pallet_Requirement.csv",
+          "Next": "InvokeCosviLambda"
+        },
+        {
+          "Variable": "$.filename",
+          "StringEquals": "RD_I_PaxLocationAll.csv",
+          "Next": "InvokePaxFlowLambda"
+        },
+        {
+          "Variable": "$.filename",
+          "StringEquals": "AssessmentTable.csv",
+          "Next": "InvokePOSLambda"
+        }
+      ],
+      "Default": "DefaultHandler"
+    },
+    "InvokeCosiLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:xxxxxxxxxxxx:function:step-cosi",
+      "Next": "FinalStep"
+    },
+    "InvokeCosiWaterLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:xxxxxxxxxxxx:function:step-cosi-water",
+      "Next": "FinalStep"
+    },
+    "InvokeCosiiviiLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:xxxxxxxxxxxx:function:step-cosii-vii",
+      "Next": "FinalStep"
+    },
+    "InvokeCosiiipLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:xxxxxxxxxxxx:function:step-cosiiip",
+      "Next": "FinalStep"
+    },
+    "InvokeCosivLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:xxxxxxxxxxxx:function:step-cosiv",
+      "Next": "FinalStep"
+    },
+    "InvokeCosixLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:xxxxxxxxxxxx:function:step-cosvi",
+      "Next": "FinalStep"
+    },
+    "InvokeCosviLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:xxxxxxxxxxxx:function:step-cosix",
+      "Next": "FinalStep"
+    },
+    "InvokePaxFlowLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:xxxxxxxxxxxx:function:step-pax-flow",
+      "Next": "FinalStep"
+    },
+    "InvokePOSLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:xxxxxxxxxxxx:function:step-pos",
+      "Next": "FinalStep"
+    },
+    "FinalStep": {
+      "Type": "Pass",
+      "Next": "FinalParallel"
+    },
+    "FinalParallel": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "CheckCompletionCosi",
+          "States": {
+            "CheckCompletionCosi": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckCompletionCosiWater",
+          "States": {
+            "CheckCompletionCosiWater": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckCompletionCosiivii",
+          "States": {
+            "CheckCompletionCosiivii": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckCompletionCosiiip",
+          "States": {
+            "CheckCompletionCosiiip": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckCompletionCosiv",
+          "States": {
+            "CheckCompletionCosiv": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckCompletionCosix",
+          "States": {
+            "CheckCompletionCosix": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckCompletionCosvi",
+          "StartAt": "CheckCompletionCosi",
+          "States": {
+            "CheckCompletionCosi": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckCompletionCosiWater",
+          "States": {
+            "CheckCompletionCosiWater": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckCompletionCosiivii",
+          "States": {
+            "CheckCompletionCosiivii": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckCompletionCosiiip",
+          "States": {
+            "CheckCompletionCosiiip": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckCompletionCosiv",
+          "States": {
+            "CheckCompletionCosiv": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckCompletionCosix",
+          "States": {
+            "CheckCompletionCosix": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckCompletionCosvi",
+          "States": {
+            "CheckCompletionCosvi": {
+              "Type": "Pass",
+            "CheckCompletionCosvi": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckCompletionPaxFlow",
+          "StartAt": "CheckCompletionPaxFlow",
+          "States": {
+            "CheckCompletionPaxFlow": {
+              "Type": "Pass",
+            "CheckCompletionPaxFlow": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckCompletionPOS",
+          "StartAt": "CheckCompletionPOS",
+          "States": {
+            "CheckCompletionPOS": {
+              "Type": "Pass",
+            "CheckCompletionPOS": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        }
+      ],
+      "Next": "InvokeFinalLambda"
+      "Next": "InvokeFinalLambda"
+    },
+    "InvokeFinalLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:xxxxxxxxxxxx:function:step-embark-agg",
+      "End": true
+    },
+    "DefaultHandler": {
+      "Type": "Fail",
+      "Cause": "No matching handler found."
+    },
+    "DefaultHandler": {
+      "Type": "Fail",
+      "Cause": "No matching handler found."
+    }
+  }
+}
+```
+
+### Pass Payload to Step Function (AWS Lambda)
+
+```{python}
+
+import boto3
+import json
+
+def lambda_handler(event, context):
+    sfn_client = boto3.client('stepfunctions')
+    state_machine_arn = 'arn:aws:states:us-east-1:123456789012:stateMachine:YourStateMachineName'
+
+    # Start execution of the state machine
+    try {
+        response = sfn_client.start_execution(
+            stateMachineArn=state_machine_arn,
+            name='EmbarkParallelProcessingExecution',
+            input=json.dumps(event)  # Assuming 'event' contains necessary input for the tasks
+        )
+        return {
+            'statusCode': 200,
+            'body': json.dumps('State machine execution started successfully.'),
+            'executionArn': response['executionArn']
+        }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'body': json.dumps(f'Failed to start state machine execution: {str(e)}')
+        }
+
+```
+
+```{python}
+
+# Create a dictionary payload to pass to the state machine
+    input_payload = json.dumps({
+        "files_to_process": embark_suffix_keys
+    })
+
+    # Start execution of the state machine
+    try:
+        response = sfn_client.start_execution(
+            stateMachineArn=state_machine_arn,
+            name='EmbarkParallelProcessingExecution-' + context.aws_request_id,
+            input=input_payload
+        )
+        return {
+            'statusCode': 200,
+            'body': json.dumps('State machine execution started successfully.'),
+            'executionArn': response['executionArn']
+        }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'body': json.dumps(f'Failed to start state machine execution: {str(e)}')
+        }
+        
+```
+
+### Mapping Artifact
+
+```{python}
+
+embark_keys = {
+    "RD_I_POS_Pallet_Requirement.csv": {"new_file": "cosi_embark.csv", "class": "COSI", "lambda_arn": "arn:aws:lambda:REGION:ACCOUNT_ID:function:cosi_lambda"},
+    "RD_IW_PaxLocationAll.csv": {"new_file": "cosi_water_embark.csv", "class": "COSI_Water", "lambda_arn": "arn:aws:lambda:REGION:ACCOUNT_ID:function:cosi_water_lambda"},
+    "RD_II_VII_DailyTE_WithDimensions.csv": {"new_file": "cosii_vii_embark.csv", "class": "COSII/VII", "lambda_arn": "arn:aws:lambda:REGION:ACCOUNT_ID:function:cosii_vii_lambda"},
+    "RD_IIIP_POL_Pkg_NSN_Requirements_PBI.csv": {"new_file": "cosiiip_embark.csv", "class": "COSIIIP", "lambda_arn": "arn:aws:lambda:REGION:ACCOUNT_ID:function:cosiiip_lambda"},
+    "RD_IV_Daily_Requirements.csv": {"new_file": "cosiv_emabark.csv", "class": "COSIV", "lambda_arn": "arn:aws:lambda:REGION:ACCOUNT_ID:function:cosiv_lambda"},
+    "RD_VI_POS_Pallet_Requirement.csv": {"new_file": "cosvi_embark.csv", "class": "COSVI", "lambda_arn": "arn:aws:lambda:REGION:ACCOUNT_ID:function:cosvi_lambda"},
+    "RD_IX_Requirement.csv": {"new_file": "cosix_embark.csv", "class": "COSIX", "lambda_arn": "arn:aws:lambda:REGION:ACCOUNT_ID:function:cosix_lambda"}
+}
+
+```
+
+### Test Inputs for Step Functions
+
+```{json eval=FALSE}
+{
+  "assessment_id": "2002",
+  "file_id": "RD_I_POS_Pallet_Requirement",
+  "file_name": "RD_I_POS_Pallet_Requirement.csv",
+  "s3_key": "assessments/2002/cos-calculators/cos-i/output/RD_I_POS_Pallet_Requirement.csv",
+  "source_bucket": "assessments-imat"
+}
+{
+  "assessment_id": "2002",
+  "file_id": "RD_IW_PaxLocationAll",
+  "file_name": "RD_IW_PaxLocationAll.csv",
+  "s3_key": "assessments/2002/cos-calculators/cos-i_water/output/RD_IW_PaxLocationAll.csv",
+  "source_bucket": "assessments-imat"
+}
+{
+  "assessment_id": "2002",
+  "file_id": "RD_II_VII_DailyTE_WithDimensions",
+  "file_name": "RD_II_VII_DailyTE_WithDimensions.csv",
+  "s3_key": "assessments/2002/cos-calculators/cos-ii_vii/output/RD_II_VII_DailyTE_WithDimensions.csv",
+  "source_bucket": "assessments-imat"
+}
+{
+  "assessment_id": "2002",
+  "file_id": "RD_IIIP_POL_Pkg_NSN_Requirements_PBI",
+  "file_name": "RD_IIIP_POL_Pkg_NSN_Requirements_PBI.csv",
+  "s3_key": "assessments/2002/cos-calculators/cos-iiip/output/RD_IIIP_POL_Pkg_NSN_Requirements_PBI.csv",
+  "source_bucket": "assessments-imat"
+}
+{
+  "assessment_id": "2002",
+  "file_id": "RD_IV_Daily_Requirements",
+  "file_name": "RD_IV_Daily_Requirements.csv",
+  "s3_key": "assessments/2002/cos-calculators/cos-iv/output/RD_IV_Daily_Requirements.csv",
+  "source_bucket": "assessments-imat"
+}
+{
+  "assessment_id": "2002",
+  "file_id": "RD_VI_POS_Pallet_Requirement",
+  "file_name": "RD_VI_POS_Pallet_Requirement.csv",
+  "s3_key": "assessments/2002/cos-calculators/cos-vi/output/RD_VI_POS_Pallet_Requirement.csv",     
+  "source_bucket": "assessments-imat"
+}
+{
+  "assessment_id": "2002",
+  "file_id": "RD_IX_Requirement",
+  "file_name": "RD_IX_Requirement.csv",
+  "s3_key": "assessments/2002/cos-calculators/cos-ix-s/output/RD_IX_Requirement.csv",
+  "source_bucket": "assessments-imat"
+}
+```

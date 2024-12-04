@@ -1,0 +1,127 @@
+{
+  "cosvi-embark-logicalTable": {
+    "Alias": "cosvi_embark",
+    "DataTransforms": [
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ASSESSMENTNUMBER",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CLASS_OF_SUPPLY",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "REGION",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "LOCATION_ID",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "LOCATION_NAME",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "REGION_MEF_LEAD",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "COS_TYPE",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "POS",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UI",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "QTY",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "PALLETS",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CUFT",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "TEUS",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "WEIGHT_LBS",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "TOTAL_COST",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "ProjectOperation": {
+          "ProjectedColumns": [
+            "ASSESSMENTNUMBER",
+            "CLASS_OF_SUPPLY",
+            "REGION",
+            "LOCATION_ID",
+            "LOCATION_NAME",
+            "REGION_MEF_LEAD",
+            "COS_TYPE",
+            "POS",
+            "UI",
+            "QTY",
+            "PALLETS",
+            "CUFT",
+            "TEUS",
+            "WEIGHT_LBS",
+            "TOTAL_COST"
+          ]
+        }
+      }
+    ],
+    "Source": {
+      "PhysicalTableId": "cosvi-embark-physicalTable"
+    }
+  }
+}

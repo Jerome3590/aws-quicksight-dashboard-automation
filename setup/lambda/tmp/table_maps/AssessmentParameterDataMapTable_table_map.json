@@ -1,0 +1,577 @@
+{
+    "Status": 200,
+    "DataSet": {
+        "Arn": "arn:aws:quicksight:us-east-1:548995328310:dataset/AssessmentParameterDataMapTable-dataset-template",
+        "DataSetId": "AssessmentParameterDataMapTable-dataset-template",
+        "Name": "AssessmentParameterDataMapTable_dataset_template",
+        "CreatedTime": "2024-08-04T00:38:27.341000-04:00",
+        "LastUpdatedTime": "2024-08-07T00:29:12.582000-04:00",
+        "PhysicalTableMap": {
+            "AssessmentParameterDataMapTable-physicalTable": {
+                "S3Source": {
+                    "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/AssessmentParameterDataMapTable-datasource-template",
+                    "UploadSettings": {
+                        "Format": "CSV",
+                        "StartFromRow": 1,
+                        "ContainsHeader": true,
+                        "TextQualifier": "DOUBLE_QUOTE",
+                        "Delimiter": ","
+                    },
+                    "InputColumns": [
+                        {
+                            "Name": "ID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "AssessmentID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClimateTypeID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TheaterTypeID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "WaterLevelID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DaysOfSupplyFirst",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DaysOfSupplySecond",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DaysOfSupplyThird",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "OverrideTFSMS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "EpwsToFeed",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "PercentToFemalePopulation",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "POS1CARFRate",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "POS2CARFRate",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "POS3CARFRate",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CalculateCRRForII_ICCE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UseII_VII_CARFForII_ICCE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "PercentForCARFForEachPOSForII_ICCE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIXCStockLevelPercent",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIXCPartsHistory",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIXCInventoryToConsider",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIXExcludeTool",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIXExcludePol",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIXExcludeBattery",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIXExcludeClothing",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIXCAcqAdvJson",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIXCPhcJson",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIXSStockLevelPercent",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIXSPartsHistory",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIXSInventoryToConsider",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIXSFloatStartDay",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIXSRepairStartDay",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIIIPPOS1",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIIIPPOS2",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIIIPPOS3",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIIIPPOSBeyond",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIIIPHeavyPkg",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ClassIIIPLightPkg",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CreatedBy",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CreatedOn",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UpdatedBy",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UpdatedOn",
+                            "Type": "STRING"
+                        }
+                    ]
+                }
+            }
+        },
+        "LogicalTableMap": {
+            "AssessmentParameterDataMapTable-logicalTable": {
+                "Alias": "AssessmentParameterDataMapTable_template",
+                "DataTransforms": [
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ID",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "AssessmentID",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DaysOfSupplyFirst",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DaysOfSupplySecond",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DaysOfSupplyThird",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "OverrideTFSMS",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "PercentToFemalePopulation",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "CalculateCRRForII_ICCE",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UseII_VII_CARFForII_ICCE",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "PercentForCARFForEachPOSForII_ICCE",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIXCStockLevelPercent",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIXCPartsHistory",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIXExcludeTool",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIXExcludePol",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIXExcludeBattery",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIXExcludeClothing",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIXSStockLevelPercent",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIXSPartsHistory",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIXSFloatStartDay",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIXSRepairStartDay",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIIIPPOS1",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIIIPPOS2",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIIIPPOS3",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIIIPPOSBeyond",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIIIPHeavyPkg",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ClassIIIPLightPkg",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "ProjectOperation": {
+                            "ProjectedColumns": [
+                                "ID",
+                                "AssessmentID",
+                                "ClimateTypeID",
+                                "TheaterTypeID",
+                                "WaterLevelID",
+                                "DaysOfSupplyFirst",
+                                "DaysOfSupplySecond",
+                                "DaysOfSupplyThird",
+                                "OverrideTFSMS",
+                                "EpwsToFeed",
+                                "PercentToFemalePopulation",
+                                "POS1CARFRate",
+                                "POS2CARFRate",
+                                "POS3CARFRate",
+                                "CalculateCRRForII_ICCE",
+                                "UseII_VII_CARFForII_ICCE",
+                                "PercentForCARFForEachPOSForII_ICCE",
+                                "ClassIXCStockLevelPercent",
+                                "ClassIXCPartsHistory",
+                                "ClassIXCInventoryToConsider",
+                                "ClassIXExcludeTool",
+                                "ClassIXExcludePol",
+                                "ClassIXExcludeBattery",
+                                "ClassIXExcludeClothing",
+                                "ClassIXCAcqAdvJson",
+                                "ClassIXCPhcJson",
+                                "ClassIXSStockLevelPercent",
+                                "ClassIXSPartsHistory",
+                                "ClassIXSInventoryToConsider",
+                                "ClassIXSFloatStartDay",
+                                "ClassIXSRepairStartDay",
+                                "ClassIIIPPOS1",
+                                "ClassIIIPPOS2",
+                                "ClassIIIPPOS3",
+                                "ClassIIIPPOSBeyond",
+                                "ClassIIIPHeavyPkg",
+                                "ClassIIIPLightPkg",
+                                "CreatedBy",
+                                "CreatedOn",
+                                "UpdatedBy",
+                                "UpdatedOn"
+                            ]
+                        }
+                    }
+                ],
+                "Source": {
+                    "PhysicalTableId": "AssessmentParameterDataMapTable-physicalTable"
+                }
+            }
+        },
+        "OutputColumns": [
+            {
+                "Name": "ID",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "AssessmentID",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClimateTypeID",
+                "Type": "STRING"
+            },
+            {
+                "Name": "TheaterTypeID",
+                "Type": "STRING"
+            },
+            {
+                "Name": "WaterLevelID",
+                "Type": "STRING"
+            },
+            {
+                "Name": "DaysOfSupplyFirst",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "DaysOfSupplySecond",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "DaysOfSupplyThird",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "OverrideTFSMS",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "EpwsToFeed",
+                "Type": "STRING"
+            },
+            {
+                "Name": "PercentToFemalePopulation",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "POS1CARFRate",
+                "Type": "STRING"
+            },
+            {
+                "Name": "POS2CARFRate",
+                "Type": "STRING"
+            },
+            {
+                "Name": "POS3CARFRate",
+                "Type": "STRING"
+            },
+            {
+                "Name": "CalculateCRRForII_ICCE",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "UseII_VII_CARFForII_ICCE",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "PercentForCARFForEachPOSForII_ICCE",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIXCStockLevelPercent",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIXCPartsHistory",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIXCInventoryToConsider",
+                "Type": "STRING"
+            },
+            {
+                "Name": "ClassIXExcludeTool",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIXExcludePol",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIXExcludeBattery",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIXExcludeClothing",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIXCAcqAdvJson",
+                "Type": "STRING"
+            },
+            {
+                "Name": "ClassIXCPhcJson",
+                "Type": "STRING"
+            },
+            {
+                "Name": "ClassIXSStockLevelPercent",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIXSPartsHistory",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIXSInventoryToConsider",
+                "Type": "STRING"
+            },
+            {
+                "Name": "ClassIXSFloatStartDay",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIXSRepairStartDay",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIIIPPOS1",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIIIPPOS2",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIIIPPOS3",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIIIPPOSBeyond",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIIIPHeavyPkg",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ClassIIIPLightPkg",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "CreatedBy",
+                "Type": "STRING"
+            },
+            {
+                "Name": "CreatedOn",
+                "Type": "STRING"
+            },
+            {
+                "Name": "UpdatedBy",
+                "Type": "STRING"
+            },
+            {
+                "Name": "UpdatedOn",
+                "Type": "STRING"
+            }
+        ],
+        "ImportMode": "SPICE",
+        "ConsumedSpiceCapacityInBytes": 862,
+        "FieldFolders": {},
+        "DataSetUsageConfiguration": {
+            "DisableUseAsDirectQuerySource": false,
+            "DisableUseAsImportedSource": false
+        }
+    },
+    "RequestId": "26603024-8be4-40df-b7a5-8d20865be84b"
+}

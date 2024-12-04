@@ -1,0 +1,288 @@
+{
+    "Status": 200,
+    "DataSet": {
+        "Arn": "arn:aws:quicksight:us-east-1:548995328310:dataset/cosi-embark-dataset-template",
+        "DataSetId": "cosi-embark-dataset-template",
+        "Name": "cosi_embark_dataset_template",
+        "CreatedTime": "2024-11-17T14:38:31.252000-05:00",
+        "LastUpdatedTime": "2024-11-17T14:38:45.169000-05:00",
+        "PhysicalTableMap": {
+            "cosi-embark-physicalTable": {
+                "S3Source": {
+                    "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/cosi-embark-datasource-template",
+                    "UploadSettings": {
+                        "Format": "CSV",
+                        "StartFromRow": 1,
+                        "ContainsHeader": true,
+                        "TextQualifier": "DOUBLE_QUOTE",
+                        "Delimiter": ","
+                    },
+                    "InputColumns": [
+                        {
+                            "Name": "ASSESSMENTNUMBER",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CLASS_OF_SUPPLY",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "COS_TYPE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "REGION",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "REGION_MEF_LEAD",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "LOCATION_ID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "LOCATION_NAME",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UI",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "POS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "QTY",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "PALLETS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNITS_PALLET_TOT_CUFT",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNITS_PALLET_TOT_TEUS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNITS_PALLET_TOT_WT.LBS.",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TOTAL_COST",
+                            "Type": "STRING"
+                        }
+                    ]
+                }
+            }
+        },
+        "LogicalTableMap": {
+            "cosi-embark-logicalTable": {
+                "Alias": "cosi_embark",
+                "DataTransforms": [
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ASSESSMENTNUMBER",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "CLASS_OF_SUPPLY",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "COS_TYPE",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "REGION",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "REGION_MEF_LEAD",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "LOCATION_ID",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "LOCATION_NAME",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UI",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "POS",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "QTY",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "PALLETS",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNITS_PALLET_TOT_CUFT",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNITS_PALLET_TOT_TEUS",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNITS_PALLET_TOT_WT.LBS.",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TOTAL_COST",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "ProjectOperation": {
+                            "ProjectedColumns": [
+                                "ASSESSMENTNUMBER",
+                                "CLASS_OF_SUPPLY",
+                                "COS_TYPE",
+                                "REGION",
+                                "REGION_MEF_LEAD",
+                                "LOCATION_ID",
+                                "LOCATION_NAME",
+                                "UI",
+                                "POS",
+                                "QTY",
+                                "PALLETS",
+                                "UNITS_PALLET_TOT_CUFT",
+                                "UNITS_PALLET_TOT_TEUS",
+                                "UNITS_PALLET_TOT_WT.LBS.",
+                                "TOTAL_COST"
+                            ]
+                        }
+                    }
+                ],
+                "Source": {
+                    "PhysicalTableId": "cosi-embark-physicalTable"
+                }
+            }
+        },
+        "OutputColumns": [
+            {
+                "Name": "ASSESSMENTNUMBER",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "CLASS_OF_SUPPLY",
+                "Type": "STRING"
+            },
+            {
+                "Name": "COS_TYPE",
+                "Type": "STRING"
+            },
+            {
+                "Name": "REGION",
+                "Type": "STRING"
+            },
+            {
+                "Name": "REGION_MEF_LEAD",
+                "Type": "STRING"
+            },
+            {
+                "Name": "LOCATION_ID",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "LOCATION_NAME",
+                "Type": "STRING"
+            },
+            {
+                "Name": "UI",
+                "Type": "STRING"
+            },
+            {
+                "Name": "POS",
+                "Type": "STRING"
+            },
+            {
+                "Name": "QTY",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "PALLETS",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "UNITS_PALLET_TOT_CUFT",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "UNITS_PALLET_TOT_TEUS",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "UNITS_PALLET_TOT_WT.LBS.",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "TOTAL_COST",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            }
+        ],
+        "ImportMode": "SPICE",
+        "ConsumedSpiceCapacityInBytes": 78452,
+        "DataSetUsageConfiguration": {
+            "DisableUseAsDirectQuerySource": false,
+            "DisableUseAsImportedSource": false
+        }
+    },
+    "RequestId": "b0b0479d-4ce0-4173-bb33-9c4d687500cf"
+}

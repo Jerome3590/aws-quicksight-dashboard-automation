@@ -1,0 +1,1972 @@
+---
+title: "AWS API Call Testing"
+author: "Jerome Dixon"
+execute: 
+  eval: false
+format: 
+  html: 
+    link-external-icon: true
+    link-external-newwindow: true
+    toc: true
+    toc-depth: 5
+    code-fold: true
+    code-summary: "Show the code"
+    embed-resources: true
+    default-image-extension: svg
+    dpi: 600
+    theme: superhero
+---
+
+### Environment
+
+```{r libraries}
+
+library(aws.s3)
+library(dplyr)
+library(readr)
+library(DT)
+library(purrr)
+library(tidyr)
+library(jsonlite)
+library(here)
+
+
+Sys.setenv(aws_profile = "quicksight")
+Sys.setenv(source_bucket = "assessments-imat")
+Sys.setenv(bucket_manifests = "assessments-manifests")
+Sys.setenv(target_bucket = "assessments-embarks-joins")
+Sys.setenv(dynamodb_tbl = "imat-dashboard-datasets")
+Sys.setenv(imat_account_id = "xxxxxxxxxxxx")
+Sys.setenv(aws_region = "us-east-1")
+Sys.setenv(owner_arn="arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:user/default/quicksight")
+
+```
+
+### QuickSight Resources
+
+#### IMAT Assessments S3 Bucket
+
+```{bash}
+
+aws s3 ls s3://$source_bucket/ --profile quicksight
+
+```
+
+#### S3 Manifests
+
+```{bash}
+
+aws s3api list-objects-v2 --profile quicksight --bucket assessments-manifests
+
+```
+
+```{python}
+
+import boto3
+import urllib.parse
+import json
+import os
+import logging
+
+# Set up logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+def lambda_handler(event, context):
+    s3_client = boto3.client('s3')
+    
+    # Retrieve environment variables
+    bucket_prefix = os.environ.get('BUCKET_PREFIX', 'default-prefix-if-not-set')
+    bucket_suffix = os.environ.get('BUCKET_SUFFIX', 'default-suffix-if-not-set')
+    manifest_bucket = os.environ.get('MANIFEST_BUCKET', 'default-manifest-bucket-if-not-set')
+    
+    logger.info("Processing started")
+
+    for record in event['Records']:
+        s3 = record['s3']
+        bucket_name = s3['bucket']['name']
+        object_key = urllib.parse.unquote_plus(s3['object']['key'])
+
+        # Ensure only .csv files are processed
+        if not object_key.lower().endswith('.csv'):
+            logger.warning(f"Non-CSV file found: {object_key}")
+            continue
+
+        logger.info(f"Processing file: {object_key}")
+        parts = object_key.split('/')
+        logger.info(f"Object key parts: {parts}")
+        
+        if len(parts) > 2 and parts[1]:
+            assessment_id = parts[1]
+            csv_file_name = parts[-1]
+            file_name_without_ext = os.path.splitext(csv_file_name)[0]
+
+            # Create JSON document for this .csv file
+            manifest_json = {
+                "entries": [{
+                    "url": f"{bucket_prefix}/{assessment_id}/{bucket_suffix}/{csv_file_name}"
+                }]
+            }
+
+            manifest_content = json.dumps(manifest_json)
+            manifest_file_name = f"manifest_{file_name_without_ext}.json"
+            logger.info(f"Uploading manifest file: {manifest_file_name}")
+
+            # Upload the manifest file to S3
+            s3_client.put_object(Bucket=manifest_bucket, Key=f"{assessment_id}/{manifest_file_name}", Body=manifest_content)
+        
+    logger.info("Processing complete")
+
+    return {
+        'statusCode': 200,
+        'body': 'Processing complete'
+    }
+
+
+```
+
+
+```{bash}
+
+aws s3 ls s3://$bucket_manifests/ --profile quicksight
+
+```
+
+### Data Sources
+
+```{python}
+
+import boto3
+import urllib.parse
+import json
+import os
+import logging
+from botocore.exceptions import ClientError
+
+# Set up logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+def lambda_handler(event, context):
+    s3_client = boto3.client('s3')
+    quicksight_client = boto3.client('quicksight')
+    stepfunctions_client = boto3.client('stepfunctions')
+
+    # Retrieve environment variables
+    aws_account_id = os.environ.get('AWS_ACCOUNT_ID', 'xxxxxxxxxxxx')  
+    manifest_bucket = os.environ.get('MANIFEST_BUCKET', 'manifests-quicksight')
+    state_machine_arn = os.environ.get('STEP_FUNCTION_ARN',')
+
+    logger.info("Processing started")
+
+    for record in event['Records']:
+        s3 = record['s3']
+        bucket_name = s3['bucket']['name']
+        object_key = urllib.parse.unquote_plus(s3['object']['key'])
+
+        if not object_key.lower().endswith('.json'):
+            logger.warning(f"Non-json file found: {object_key}")
+            continue
+
+        logger.info(f"Processing file: {object_key}")
+        parts = object_key.split('/')
+        logger.info(f"Object key parts: {parts}")
+
+        if len(parts) > 1 and parts[1]:
+            assessment_id = parts[0]
+            manifest_file_name = parts[1]
+            manifest_file_name_without_ext = os.path.splitext(manifest_file_name)[0]
+            file_name = manifest_file_name_without_ext.replace('manifest_', '')
+            datasource_name = file_name + "_datasource_" + assessment_id
+            datasource_id = file_name + "-datasource-" + assessment_id
+            
+            logger.info(f"Datasource Name: {datasource_name}")
+            logger.info(f"Datasource ID: {datasource_id}")
+
+            try:
+                response = quicksight_client.create_data_source(
+                    AwsAccountId=aws_account_id,
+                    DataSourceId=datasource_id,
+                    Name=datasource_name,
+                    Type='S3',
+                    DataSourceParameters={
+                        'S3Parameters': {
+                            'ManifestFileLocation': {
+                                'Bucket': manifest_bucket,
+                                'Key': assessment_id + "/" + manifest_file_name
+                            }
+                        }
+                    }
+                )
+                logger.info(f"DataSource created: {response}")
+                
+                # Start Step Function state machine execution
+                state_machine_arn = 'arn:aws:states:{region}:{aws_account_id}:stateMachine:{state_machine}'
+                execution_response = stepfunctions_client.start_execution(
+                    stateMachineArn={state_machine_arn},
+                    input=json.dumps(dataset_response)
+                )
+                logger.info(f"Step Functions execution started: {execution_response}")
+                
+            except ClientError as e:
+                if e.response['Error']['Code'] == 'AccessDeniedException':
+                    logger.error(f"Access Denied: {e.response['Error']['Message']}")
+                else:
+                    logger.error(f"Error: {e.response['Error']['Message']}")
+            except Exception as e:
+                logger.error(f"Unexpected error: {e}")
+    
+    logger.info("Data Source Processing Complete")
+    return {
+        'statusCode': 200,
+        'body': 'Processing complete'
+    }
+
+```
+
+
+```{bash}
+
+aws quicksight list-data-sources --aws-account-id $imat_account_id --profile imat
+
+```
+
+#### Table Maps
+
+```{bash}
+
+# Set the dataset ID
+dataset_id="cos-i-subsistence-RD-I-PaxLocationAll-dataset-10910"
+dataset_name="cos_i_subsistence_RD_I_PaxLocationAll_dataset_10910"
+
+# Assuming dataset_name is defined elsewhere in your script
+table_map_name="${dataset_name}_table_map"
+
+# Fetch dataset details using the dataset ID
+dataset_info=$(aws quicksight describe-data-set \
+  --aws-account-id $imat_account_id \
+  --data-set-id $dataset_id \
+  --region us-east-1 \
+  --profile imat)
+
+# Check for errors in fetching dataset details
+if [ $? -ne 0 ]; then
+    echo "Error in fetching details for dataset ID: $dataset_id"
+    exit 1
+fi
+
+# Save the dataset information to JSON file
+echo "$dataset_info" > "${table_map_name}.json"
+
+# Extract the LogicalTableMap and save it to a file
+new_logical_table_map=$(echo "$dataset_info" | jq -r '.DataSet.LogicalTableMap')
+echo "$new_logical_table_map" > "${dataset_name}_logical_map.json"
+
+# Extract the PhysicalTableMap and save it to a file
+new_physical_table_map=$(echo "$dataset_info" | jq -r '.DataSet.PhysicalTableMap')
+echo "$new_physical_table_map" > "${dataset_name}_physical_map.json"
+
+# Upload the generated files to the S3 bucket
+aws s3 cp "${table_map_name}.json" "s3://$bucket_table_maps/" --profile imat
+aws s3 cp "${dataset_name}_logical_map.json" "s3://$bucket_table_maps/" --profile imat
+aws s3 cp "${dataset_name}_physical_map.json" "s3://$bucket_table_maps/" --profile imat
+
+
+```
+
+##### Update Table Maps With New Datasource ARN
+
+```{bash update-json}
+
+# Function to update JSON based on various parameters
+update_json() {
+  local aws_account_id="$1"
+  local assessment_id="$2"
+  local json_file="$3"
+  local modified_json="$4"
+  local ds_name="$5"
+  
+  local physical_table_id=$(jq -r '.DataSet.PhysicalTableMap | keys[0]' "$json_file")
+
+  # Calculate new values
+  local new_source_arn="arn:aws:quicksight:us-east-1:$aws_account_id:datasource/$datasource_id-$assessment_id"
+  
+  # Update JSON using jq
+  jq --arg new_source_arn "$new_source_arn" \
+     --arg physical_table_id "$physical_table_id"  \
+  '.DataSet.PhysicalTableMap[$physical_table_id].S3Source.DataSourceArn = $new_source_arn' "$json_file" > "$modified_json"
+  
+}
+
+
+# Retrieve environment variables
+aws_account_id="$aws_account_id"
+assessment_id="$assessment_id"
+
+update_json "$aws_account_id" "$assessment_id" "rations.json" "modified_rations.json" "$ds_name"
+
+
+```
+
+### Datasets
+
+```{bash}
+
+aws quicksight list-data-sets --aws-account-id $imat_account_id --profile quicksight
+
+```
+
+```{python}
+
+import boto3
+
+def check_dataset_exists(quicksight_client, aws_account_id, aggregated_dataset_id):
+    try:
+        quicksight_client.describe_data_set(
+            AwsAccountId=aws_account_id,
+            DataSetId=aggregated_dataset_id
+        )
+        return True
+    except quicksight_client.exceptions.ResourceNotFoundException:
+        return False
+    except Exception as e:
+        logger.error(f"Error checking dataset existence for {aggregated_dataset_id}: {e}")
+        raise
+```
+
+```{python}
+
+aggregated_dataset_id = 'aggregated-embark-dataset-20200215493'
+aws_account_id = 'xxxxxxxxxxxx'
+quicksight_client = boto3.client('quicksight')
+
+check_dataset_exists(quicksight_client, aws_account_id, aggregated_dataset_id)
+
+```
+
+##### RD-IW-PaxLocationAll
+
+```{bash}
+aws s3 cp s3://{bucket_name}/assessments/20200215587/RD_IW_PaxLocationAll_joined.csv . --profile quicksight
+```
+
+### Analysis
+
+```{bash}
+
+aws quicksight list-analyses --aws-account-id $imat_account_id --profile quicksight
+
+```
+
+##### Create Analysis from Template
+
+```{json}
+{
+    "AwsAccountId": "xxxxxxxxxxxx",
+    "AnalysisId": "rd-analysis-template",
+    "Name": "RD Analysis Template",
+    "Permissions": [
+        {
+            "Principal": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:user/default/quicksight",
+            "Actions": [
+                "quicksight:RestoreAnalysis",
+                "quicksight:UpdateAnalysisPermissions",
+                "quicksight:DeleteAnalysis",
+                "quicksight:DescribeAnalysisPermissions",
+                "quicksight:QueryAnalysis",
+                "quicksight:DescribeAnalysis",
+                "quicksight:UpdateAnalysis"
+            ]
+        }
+    ],
+    "SourceEntity": {
+        "SourceTemplate": {
+            "Arn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:template/rd-template-109010",
+            "DataSetReferences": [
+                {
+                    "DataSetPlaceholder": "ForceFlow_joined_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/ForceFlow-joined-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_I_Ration_Costs_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-I-Ration-Costs-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "cosi_water_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosi-water-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "cosiiip_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosiiip-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_II_VII_DailyTE_WithDimensions_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-II-VII-DailyTE-WithDimensions-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "cosiv_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosiv-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "POS_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/POS-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "cosi_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosi-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "AssessmentTable_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/AssessmentTable-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_IW_Ration_Costs_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-IW-Ration-Costs-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "cosix_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosix-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_IW_PaxLocationAll_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-IW-PaxLocationAll-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "AssessmentParameterDataMapTable_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/AssessmentParameterDataMapTable-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "Locations_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/Locations-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "cosvi_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosvi-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_IX_Requirement_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-IX-Requirement-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_I_POS_Pallet_Requirement_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-I-POS-Pallet-Requirement-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_I_POS_Location_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-I-POS-Location-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "cosii_vii_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosii-vii-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "aggregated_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/aggregated-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_IW_POS_Requirement_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-IW-POS-Requirement-dataset-template"
+                }
+            ]
+        }
+    }
+}
+
+```
+
+
+```{bash}
+
+aws quicksight create-analysis --cli-input-json file://create_analysis.json --profile quicksight
+
+```
+
+```{bash}
+
+aws quicksight describe-analysis --analysis-id '4ccf9371-516e-46ee-8072-814b7844d26f' \
+  --aws-account-id $imat_account_id \
+  --profile quicksight > analysis_description.json
+
+```
+
+```{python}
+import json
+
+# Load the original analysis description JSON
+with open('analysis_description.json', 'r') as f:
+    analysis = json.load(f)
+
+# Extract DataSetArns from the analysis description
+dataset_arns = analysis['Analysis']['DataSetArns']
+
+# Create DataSetIdentifierDeclarations from DataSetArns
+identifier_declarations = []
+for arn in dataset_arns:
+    # Extract dataset ID from the ARN
+    dataset_id = arn.split('/')[-1]
+    # Create the identifier by replacing hyphens with underscores
+    identifier = dataset_id.replace('-', '_')
+    identifier_declarations.append({
+        "DataSetArn": arn,
+        "Identifier": identifier
+    })
+
+# Integrate the new DataSetIdentifierDeclarations into the existing analysis structure
+analysis['Analysis']['Definition'] = {
+    'DataSetIdentifierDeclarations': identifier_declarations,
+    'Sheets': analysis['Analysis']['Sheets']  # Retain existing sheets
+}
+
+# Save the updated analysis JSON to a new file
+with open('updated_analysis_description.json', 'w') as f:
+    json.dump(analysis, f, indent=2)
+
+print("Updated analysis description saved to updated_analysis_description.json")
+```
+
+
+```{python}
+
+import json
+
+# Load the analysis description JSON from a file
+with open('analysis_description.json') as f:
+    analysis_desc = json.load(f)
+
+# Extract relevant sections: Sheets and DataSetArns
+sheets = analysis_desc['Analysis']['Sheets']
+dataset_arns = analysis_desc['Analysis']['DataSetArns']
+
+# Define a mapping input for updating SheetIds
+mapping_input = {
+    '328c84c9-b209-4dfd-b06c-a5e5c34d806b': 'summary-version-001',
+    'b26d8bd4-78e6-48b5-ba29-12308463fc00': 'force-flow-version-001',
+    'f2b1e245-2c70-47f2-8f66-b1a84235f065': 'embark-version-001',
+    '013dda57-2206-4088-b9d2-4397808fc58c': 'cl-i-rd-version-001',
+    'a417409a-d532-45a8-8c91-b0cf5b763979': 'cl-i-embark-rd-version-001',
+    '1ec04fdc-d63b-4f8a-9899-cce04aca7c12': 'cl-i-water-rd-version-001',
+    'bca51d56-a56b-46c7-95d0-1956e278c0df': 'cl-ii-vii-rd-version-001',
+    '78b81d8e-aa06-4418-bdcc-58c2c125fd8c': 'cl-ii-vii-embark-rd-version-001',
+    '6f8de827-0a1a-4d70-b87d-f6c75e8c1ffc': 'cl-iiip-rd-version-001',
+    '4fdb80f6-1012-4078-9ff2-ac09b9135909': 'cl-iiip-embark-rd-version-001',
+    'a34941dc-9887-411b-89e3-d9a3b4bc4ebd': 'cl-iv-rd-version-001',
+    'a16579fe-9a90-4077-a110-d7d3ac502666': 'cl-iv-embark-rd-version-001',
+    '8dfee45c-e3b5-4923-b7e5-e4dd09122e95': 'cl-vi-rd-version-001',
+    '108b46cb-dc49-4fbc-8b70-78c8538de5c4': 'cl-vi-embark-rd-version-001',
+    '2f192170-cf31-440d-8c27-5066b842fa0d': 'cl-ix-rd-version-001',
+    '28bea3ad-30b2-4feb-8843-e8fdbaaee345': 'cl-ix-embark-rd-version-001'
+}
+
+# Update the SheetIds based on the mapping input
+for sheet in sheets:
+    old_id = sheet['SheetId']
+    if old_id in mapping_input:
+        sheet['SheetId'] = mapping_input[old_id]
+
+
+# Extract DataSetArns from the analysis description
+dataset_arns = analysis['Analysis']['DataSetArns']
+
+# Create DataSetIdentifierDeclarations from DataSetArns
+identifier_declarations = []
+for arn in dataset_arns:
+    # Extract dataset ID from the ARN
+    dataset_id = arn.split('/')[-1]
+    # Create the identifier by replacing hyphens with underscores
+    identifier = dataset_id.replace('-', '_')
+    identifier_declarations.append({
+        "DataSetArn": arn,
+        "Identifier": identifier
+    })
+
+
+# Prepare the updated output
+updated_sections = {
+        'DataSetIdentifierDeclarations': identifier_declarations,
+        'Sheets': sheets
+}
+
+# Save the updated JSON structure to a file
+output_file_path = 'updated_analysis_description.json'
+with open(output_file_path, 'w') as f:
+    json.dump(updated_sections, f, indent=4)
+
+print(f"Updated analysis description saved to {output_file_path}")
+
+```
+
+
+```{bash}
+
+aws quicksight update-analysis --analysis-id '79dae47e-0dbe-40fa-b3a9-00350b0a34f4' \
+  --aws-account-id $imat_account_id \
+  --name 'RD-Template-10-24-2024' \
+  --definition file://updated_analysis_description.json \
+  --profile quicksight
+
+```
+
+
+### Templates
+
+```{json}
+{
+    "AwsAccountId": "xxxxxxxxxxxx",
+    "TemplateId": "IMAT-PHASE-RD-TEMPLATE",
+    "Name": "IMAT RD Phase Template",
+    "SourceEntity": {
+        "SourceAnalysis": {
+            "Arn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:analysis/rd-analysis-template",
+            "DataSetReferences": [
+                {
+                    "DataSetPlaceholder": "ForceFlow_joined_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/ForceFlow-joined-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_I_Ration_Costs_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-I-Ration-Costs-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "cosi_water_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosi-water-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "cosiiip_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosiiip-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_II_VII_DailyTE_WithDimensions_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-II-VII-DailyTE-WithDimensions-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "cosiv_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosiv-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "POS_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/POS-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "cosi_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosi-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "AssessmentTable_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/AssessmentTable-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_IW_Ration_Costs_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-IW-Ration-Costs-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "cosix_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosix-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_IW_PaxLocationAll_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-IW-PaxLocationAll-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "AssessmentParameterDataMapTable_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/AssessmentParameterDataMapTable-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "Locations_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/Locations-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "cosvi_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosvi-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_IX_Requirement_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-IX-Requirement-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_I_POS_Pallet_Requirement_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-I-POS-Pallet-Requirement-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_I_POS_Location_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-I-POS-Location-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "cosii_vii_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosii-vii-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "aggregated_embark_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/aggregated-embark-dataset-template"
+                },
+                {
+                    "DataSetPlaceholder": "RD_IW_POS_Requirement_dataset_template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-IW-POS-Requirement-dataset-template"
+                }
+            ]
+        }
+    },
+    "VersionDescription": "1"
+}
+
+```
+
+```{bash}
+
+aws quicksight create-template --cli-input-json file://create_template.json --profile quicksight
+
+```
+
+
+```{bash}
+
+# Define variables
+ROLE_ARN="arn:aws:iam::xxxxxxxxxxxx:role/quicksight-cross-account"
+SESSION_NAME="QuickSightCrossAccountSession"
+TARGET_PROFILE="mushin"
+
+# Assume the role and capture the output
+ASSUME_ROLE_OUTPUT=$(aws sts assume-role --role-arn $ROLE_ARN --role-session-name $SESSION_NAME --profile $TARGET_PROFILE)
+
+# Extract temporary credentials from the assume-role output
+export AWS_ACCESS_KEY_ID=$(echo $ASSUME_ROLE_OUTPUT | jq -r '.Credentials.AccessKeyId')
+export AWS_SECRET_ACCESS_KEY=$(echo $ASSUME_ROLE_OUTPUT | jq -r '.Credentials.SecretAccessKey')
+export AWS_SESSION_TOKEN=$(echo $ASSUME_ROLE_OUTPUT | jq -r '.Credentials.SessionToken')
+
+# Check if credentials are set
+if [ -z "$AWS_ACCESS_KEY_ID" ]; then
+    echo "Failed to assume role"
+    exit 1
+else
+    echo "Successfully assumed role"
+fi
+
+# Example QuickSight command using the temporary credentials
+aws quicksight list-templates --aws-account-id xxxxxxxxxxxx
+
+# Unset the temporary credentials after the operations are done
+unset AWS_ACCESS_KEY_ID
+unset AWS_SECRET_ACCESS_KEY
+unset AWS_SESSION_TOKEN
+
+```
+
+
+```{bash}
+
+# Define variables for the source account
+SOURCE_PROFILE="imat"
+SOURCE_ACCOUNT_ID="xxxxxxxxxxxx"
+TEMPLATE_ID="rd-template-109010"
+
+# Describe the template in the source account using the source profile
+TEMPLATE_DETAILS=$(aws quicksight describe-template --aws-account-id $SOURCE_ACCOUNT_ID --template-id $TEMPLATE_ID --profile $SOURCE_PROFILE)
+
+# Save the template details to a local file
+echo $TEMPLATE_DETAILS | jq '.' > template_details.json
+
+# Print a message to indicate that the JSON file has been saved
+echo "Template details have been saved to template_details.json"
+
+
+```
+
+
+```{bash}
+
+cd ../testing
+
+# Define variables
+SOURCE_ROLE_ARN="arn:aws:iam::xxxxxxxxxxxx:role/quicksight-cross-account"
+SOURCE_SESSION_NAME="QuickSightCrossAccountSession"
+TARGET_PROFILE="mushin"
+TARGET_ACCOUNT_ID="535362115856"
+TARGET_TEMPLATE_ID="imat-template-id"
+TARGET_TEMPLATE_NAME="IMAT Template"
+
+# Assume the role in the source account using the target account profile
+ASSUME_ROLE_OUTPUT=$(aws sts assume-role --role-arn $SOURCE_ROLE_ARN --role-session-name $SOURCE_SESSION_NAME --profile $TARGET_PROFILE)
+
+# Check if assume role was successful
+if [ $? -ne 0 ]; then
+    echo "Failed to assume role"
+    exit 1
+fi
+
+# Extract temporary credentials from the assume-role output
+export AWS_ACCESS_KEY_ID=$(echo $ASSUME_ROLE_OUTPUT | jq -r '.Credentials.AccessKeyId')
+export AWS_SECRET_ACCESS_KEY=$(echo $ASSUME_ROLE_OUTPUT | jq -r '.Credentials.SecretAccessKey')
+export AWS_SESSION_TOKEN=$(echo $ASSUME_ROLE_OUTPUT | jq -r '.Credentials.SessionToken')
+
+# Read the template details from the local file
+TEMPLATE_DETAILS=$(cat template_details.json)
+
+# Extract the relevant parts of the template details
+TEMPLATE_SOURCE_ANALYSIS_ARN=$(echo $TEMPLATE_DETAILS | jq -r '.Template.Version.SourceEntityArn')
+
+# Extract DataSetReferences and construct the JSON array manually
+TEMPLATE_DATA_SET_REFERENCES=$(echo $TEMPLATE_DETAILS | jq -c '[.Template.Version.DataSetConfigurations[] | {DataSetPlaceholder: .Placeholder, DataSetArn: ("arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/" + .Placeholder)}]')
+
+# Create the JSON for the source entity manually
+SOURCE_ENTITY_JSON="{\"SourceAnalysis\":{\"Arn\":\"$TEMPLATE_SOURCE_ANALYSIS_ARN\",\"DataSetReferences\":$TEMPLATE_DATA_SET_REFERENCES}}"
+
+# Create a new template in the target account using the extracted details
+aws quicksight create-template \
+  --aws-account-id $TARGET_ACCOUNT_ID \
+  --template-id $TARGET_TEMPLATE_ID \
+  --name "$TARGET_TEMPLATE_NAME" \
+  --source-entity "$SOURCE_ENTITY_JSON" \
+  --profile $TARGET_PROFILE
+
+echo "Template copy operation completed."
+
+# Unset the temporary credentials after the operation is completed
+unset AWS_ACCESS_KEY_ID
+unset AWS_SECRET_ACCESS_KEY
+unset AWS_SESSION_TOKEN
+
+
+```
+
+
+```{bash}
+
+# Define variables
+SOURCE_ANALYSIS_ID="rd-analysis-template-10910"
+SOURCE_TEMPLATE_ID="rd-template-109010"
+SOURCE_PROFILE="imat"
+SOURCE_ACCOUNT_ID="xxxxxxxxxxxx"
+
+TARGET_PROFILE="mushin"
+TARGET_ACCOUNT_ID="535362115856"
+TARGET_TEMPLATE_ID="imat-template-id"
+TARGET_TEMPLATE_NAME="IMAT Template"
+
+
+# Describe the analysis in the source account using the temporary credentials
+ANALYSIS_DETAILS=$(aws quicksight describe-analysis --aws-account-id $SOURCE_ACCOUNT_ID --analysis-id $SOURCE_ANALYSIS_ID --profile imat)
+
+# Save the analysis details to a local file
+echo $ANALYSIS_DETAILS | jq '.' > analysis_details.json
+
+# Extract the relevant parts of the analysis details
+SOURCE_ENTITY_ARN=$(echo $ANALYSIS_DETAILS | jq -r '.Analysis.Arn')
+DATA_SET_ARN=$(echo $ANALYSIS_DETAILS | jq -r '.Analysis.DataSetArns[0]')
+
+# Construct the DataSetReferences JSON
+DATA_SET_REFERENCES=$(jq -n --arg placeholder "placeholder_1" --arg arn "$DATA_SET_ARN" '[{DataSetPlaceholder: $placeholder, DataSetArn: $arn}]')
+
+# Create the source entity JSON
+SOURCE_ENTITY_JSON=$(jq -n --arg arn "$SOURCE_ENTITY_ARN" --argjson refs "$DATA_SET_REFERENCES" '{SourceAnalysis: {Arn: $arn, DataSetReferences: $refs}}')
+
+# Create a new template in the target account using the extracted details
+aws quicksight create-template \
+  --aws-account-id $TARGET_ACCOUNT_ID \
+  --template-id $TARGET_TEMPLATE_ID \
+  --name "$TARGET_TEMPLATE_NAME" \
+  --source-entity "$SOURCE_ENTITY_JSON" \
+  --profile mushin
+
+echo "Template copy operation completed."
+
+
+```
+
+
+```{bash}
+
+aws quicksight list-templates --aws-account-id $imat_account_id --profile quicksight
+
+```
+
+For a specific assessment id: aws quicksight list-dashboards --aws-account-id <your-account-id> | jq '.DashboardSummaryList[] | select(.Arn | contains($assessment_id))'
+
+
+```{bash create-template}
+
+template_name="RD_Assessment_Template"
+template_id="rd-assessment-template-10910"
+
+response=$(aws quicksight create-template \
+    --aws-account-id "xxxxxxxxxxxx" \
+    --template-id "$template_id" \
+    --name "$template_name" \
+    --source-entity '{
+        "SourceAnalysis": {
+            "Arn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:analysis/rd-analysis-template-10910",
+            "DataSetReferences": [
+                {
+                    "DataSetPlaceholder": "Template",
+                    "DataSetArn": "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/4bf8bf97-417e-4bcd-92dd-9c9fbbd0d889"
+                }
+            ]
+        }
+    }' \
+    --profile imat)
+
+echo "Response from create-template command:"
+echo "$response"
+
+
+```
+
+```{describe-template}
+
+```
+
+
+### Dashboards
+
+```{bash}
+
+aws quicksight list-dashboards --aws-account-id $imat_account_id --profile quicksight
+
+```
+
+
+### Tag Resources
+
+```{bash}
+
+aws quicksight tag-resource --resource-arn arn:aws:quicksight:$aws_region:$aws_account_id:dashboard/$dashboard_id --tags Key=Project,Value=IMAT --profile imat
+
+
+```
+
+
+```{bash}
+
+aws quicksight tag-resource --resource-arn arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:analysis/959f5382-e5bc-420e-8d15-2fce3532ac57 --tags Key=Project,Value=IMAT --profile imat
+
+```
+
+
+```{bash}
+
+aws quicksight tag-resource --resource-arn arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/a1df9518-4c5d-4ed9-8368-efa2271c15bd --tags Key=Project,Value=IMAT --profile imat
+
+```
+
+
+```{bash}
+
+aws quicksight tag-resource --resource-arn arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:datasource/c1c1dd1f-c382-4561-bd10-aedd1a3dc3ec --tags Key=Project,Value=IMAT --profile imat
+
+```
+
+### Delete Resources
+
+```{bash delete-data-source}
+
+aws quicksight delete-data-source \
+  --aws-account-id $imat_account_id \
+  --data-source-id cosvi-embark-datasource-template \
+  --profile imat
+  
+```
+
+
+```{bash delete-dataset}
+
+aws quicksight delete-data-set \
+  --aws-account-id $imat_account_id \
+  --data-set-id cosvi-embark-dataset-template \
+  --profile imat
+  
+```
+
+
+```{bash delete-manifest}
+
+aws s3 rm s3://$bucket_manifests/$assessment_id/manifest_$ds_name.json \
+  --profile imat
+  
+```
+
+
+```{bash delete-dashboards}
+
+aws quicksight delete-dashboard \
+  --aws-account-id $imat_account_id \
+  --dashboard-id RD-Assessment-9002-test5 \
+  --profile quicksight
+
+```
+
+
+```{bash delete-analysis}
+
+aws quicksight delete-analysis \
+  --aws-account-id $imat_account_id \
+  --analysis-id "72e93459-018e-41c1-abea-ac2d84be29ff" \
+  --profile quicksight
+
+```
+
+
+```{bash delete-template}
+
+aws quicksight delete-template \
+  --aws-account-id $imat_account_id \
+  --template-id rd-template-109010 \
+  --profile quicksight
+
+
+```
+
+#### Delete Previous Datasources
+
+```{bash}
+
+# String to search in datasource IDs
+search_string="cosvi-embark"
+
+# List all data sources and filter IDs by the search string
+datasource_ids=$(aws quicksight list-data-sources --aws-account-id $imat_account_id --profile quicksight | jq -r '.DataSources[] | select(.DataSourceId | contains("'$search_string'")) | .DataSourceId')
+
+# Convert datasource_ids string to an array
+IFS=$'\n' read -r -d '' -a datasource_array <<< "$datasource_ids"
+
+# Check if data source IDs were found
+if [ ${#datasource_array[@]} -eq 0 ]; then
+    echo "No data sources found containing the string: $search_string"
+    exit 1
+fi
+
+# Loop through each data source ID and invoke Lambda
+for datasource_id in "${datasource_array[@]}"; do
+    echo "Processing data source: $datasource_id"
+
+    # Trim whitespace and carriage return from the dataSourceId
+    trimmed_datasource_id=$(echo "$datasource_id" | tr -d '[:space:]')
+
+    # Prepare the JSON payload
+    payload=$(jq -n --arg dsId "$trimmed_datasource_id" --arg accId "$imat_account_id" '{dataSourceId: $dsId, awsAccountId: $accId}')
+
+    # Base64 encode the payload
+    base64_payload=$(echo -n "$payload" | base64)
+
+    # Echo the base64-encoded payload for debugging
+    echo "Base64 Payload: $base64_payload"
+
+    # Invoke Lambda function for deletion
+    aws lambda invoke --function-name deleteQuickSightDataSources \
+                      --payload "$base64_payload" \
+                      response.json \
+                      --profile quicksight
+                      
+    # Echo response to console
+    echo "Response for data source $trimmed_datasource_id:"
+    cat response.json
+    echo ""
+done
+
+echo "Deletion process initiated for all data sources."
+
+```
+
+#### Delete Previous Datasets
+
+```{bash}
+
+# String to search in dataset IDs
+search_string="-2020"
+
+# List all datasets and filter IDs by the search string
+dataset_ids=$(aws quicksight list-data-sets --aws-account-id $imat_account_id --profile quicksight | jq -r '.DataSetSummaries[] | select(.DataSetId | contains("'$search_string'")) | .DataSetId')
+
+# Convert dataset_ids string to an array
+IFS=$'\n' read -r -d '' -a dataset_array <<< "$dataset_ids" || true
+
+# Check if dataset IDs were found
+if [ ${#dataset_array[@]} -eq 0 ]; then
+    echo "No datasets found containing the string: $search_string"
+    exit 1
+fi
+
+# Loop through each dataset ID and invoke Lambda
+for dataset_id in "${dataset_array[@]}"; do
+    echo "Processing dataset: $dataset_id"
+
+    # Trim whitespace and carriage return from the datasetId
+    trimmed_dataset_id=$(echo "$dataset_id" | tr -d '[:space:]')
+
+    # Prepare the JSON payload
+    payload=$(jq -n --arg dsId "$trimmed_dataset_id" --arg accId "$imat_account_id" '{datasetId: $dsId, awsAccountId: $accId}')
+
+    # Base64 encode the payload
+    base64_payload=$(echo -n "$payload" | base64)
+
+    # Echo the base64-encoded payload for debugging
+    echo "Base64 Payload: $base64_payload"
+
+    # Invoke Lambda function for deletion or any other intended action
+    aws lambda invoke --function-name deleteQuickSightDataSources \
+                      --payload "$base64_payload" \
+                      response.json \
+                      --profile quicksight
+                      
+    # Echo response to console
+    echo "Response for dataset $trimmed_dataset_id:"
+    cat response.json
+    echo ""
+done
+
+echo "Process initiated for all datasets."
+
+```
+
+#### Delete Previous Analyses
+
+```{python}
+
+import boto3
+import itertools
+import os
+import json
+
+
+# Define the string pattern you want to match in the AnalysisId
+string_pattern = '-08a6-491f'
+
+# Function to list all analyses
+def list_analyses():
+    response = quicksight_client.list_analyses(AwsAccountId=qs_account_id)
+    return response['AnalysisSummaryList']
+
+# Function to delete an analysis by AnalysisId
+def delete_analysis(analysis_id):
+    try:
+        response = quicksight_client.delete_analysis(
+            AwsAccountId=qs_account_id,
+            AnalysisId=analysis_id
+        )
+        print(f"Deleted analysis: {analysis_id}")
+    except Exception as e:
+        print(f"Error deleting analysis {analysis_id}: {str(e)}")
+
+# Main function to list and delete analyses containing the string pattern
+def delete_analyses_with_pattern():
+    analyses = list_analyses()
+    
+    # Filter analyses by string pattern
+    matching_analyses = [analysis['AnalysisId'] for analysis in analyses if string_pattern in analysis['AnalysisId']]
+    
+    if not matching_analyses:
+        print(f"No analyses found with pattern '{string_pattern}'.")
+        return
+    
+    # Loop through matching analyses and delete them
+    for analysis_id in matching_analyses:
+        delete_analysis(analysis_id)
+
+# Run the function to delete analyses
+delete_analyses_with_pattern()
+
+```
+
+#### Delete Previous Dashboards
+
+```{python}
+
+# Define the string pattern you want to match in the DashboardId
+dashboard_string_pattern = '-2020'
+
+# Function to list and delete dashboards containing the string pattern
+def delete_dashboards_with_pattern():
+    # List dashboards
+    response = quicksight_client.list_dashboards(AwsAccountId=qs_account_id)
+    dashboards = response['DashboardSummaryList']
+    
+    # Filter dashboards by string pattern
+    matching_dashboards = [dashboard['DashboardId'] for dashboard in dashboards if dashboard_string_pattern in dashboard['DashboardId']]
+    
+    if not matching_dashboards:
+        print(f"No dashboards found with pattern '{dashboard_string_pattern}'.")
+        return
+    
+    # Loop through matching dashboards and delete them
+    for dashboard_id in matching_dashboards:
+        try:
+            quicksight_client.delete_dashboard(AwsAccountId=qs_account_id, DashboardId=dashboard_id)
+            print(f"Deleted dashboard: {dashboard_id}")
+        except Exception as e:
+            print(f"Error deleting dashboard {dashboard_id}: {str(e)}")
+
+
+# Run the function to delete dashboards
+delete_dashboards_with_pattern()
+
+
+```
+
+### IAM Permissions
+
+```{bash}
+
+aws quicksight describe-account-settings --aws-account-id $imat_account_id --profile quicksight
+
+```
+
+
+```{bash}
+
+aws quicksight list-iam-policy-assignments --aws-account-id $imat_account_id \
+  --namespace default --assignment-status ENABLED \
+  --profile quicksight
+
+```
+
+General Steps:
+1. Create IAM Policies:
+
+Define policies that include permissions for the QuickSight actions you need.
+Use the AWS Management Console or the AWS CLI to create these policies.
+Attach Policies to IAM Roles:
+
+2. Create IAM roles for Lambda, Step Functions, and any users or services that will execute AWS CLI commands.
+Attach the created policies to these roles.
+Assign Roles to Services:
+
+3. Assign the appropriate roles to your Lambda functions and Step Functions state machines.
+For CLI users, ensure they have the necessary permissions either directly or via a group.
+
+
+#### User/CLI Permissions
+
+```{json}
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": "quicksight:*",
+            "Resource": "*"
+        }
+    ]
+}
+
+```
+
+
+#### IAM Policies
+
+
+```{json}
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "logs:CreateLogGroup",
+            "Resource": "arn:aws:logs:us-east-1:$aws_account_id:*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": [
+                "arn:aws:logs:us-east-1:$aws_account_id:log-group:/aws/lambda/quicksight-trigger:*"
+            ]
+        }
+    ]
+}
+
+```
+
+
+```{json}
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "quicksight:DescribeDataSet",
+                "quicksight:DescribeDataSetPermissions",
+                "quicksight:PassDataSet",
+                "quicksight:DescribeIngestion",
+                "quicksight:ListIngestions",
+                "quicksight:CreateDashboard",
+                "quicksight:CreateDataSource",
+                "quicksight:CreateDataSet",
+                "quicksight:DescribeDashboard",
+                "quicksight:DescribeDataSource"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "lambda:InvokeFunction",
+            "Resource": "arn:aws:lambda:us-east-1:$aws_account_id:function:quicksight-trigger"
+        }
+    ]
+}
+
+```
+
+#### AWS Step Function
+
+```{json}
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "states:StartExecution"
+            ],
+            "Resource": [
+                "arn:aws:states:us-east-1:$aws_account_id:stateMachine:IMAT-QuickSight-Trigger"
+            ]
+        }
+    ]
+}
+
+```
+
+#### AWS S3
+
+QuickSight Policy
+ - Of note: AWS QuickSight can not access S3 Express Zone at this time. Will use AWS Lambda with S3 Express Zone to validate files with table map schemas prior to any processing.
+
+```{json}
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "s3:ListAllMyBuckets",
+            "Resource": "arn:aws:s3:::*"
+        },
+        {
+            "Action": [
+                "s3:ListBucket"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:s3:::cana-quicksight-dev",
+                "arn:aws:s3:::{bucket_name}",
+                "arn:aws:s3:::manifests-quicksight",
+                "arn:aws:s3:::cloud-trail-logs-imat"
+            ]
+        },
+        {
+            "Action": [
+                "s3:GetObject",
+                "s3:GetObjectVersion"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:s3:::cana-quicksight-dev/*",
+                "arn:aws:s3:::{bucket_name}/*",
+                "arn:aws:s3:::manifests-quicksight/*",
+                "arn:aws:s3:::cloud-trail-logs-imat/*"
+            ]
+        },
+        {
+            "Action": [
+                "s3:ListBucketMultipartUploads",
+                "s3:GetBucketLocation"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:s3:::manifests-quicksight",
+                "arn:aws:s3:::cloud-trail-logs-imat"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:AbortMultipartUpload",
+                "s3:ListMultipartUploadParts"
+            ],
+            "Resource": [
+                "arn:aws:s3:::manifests-quicksight/*",
+                "arn:aws:s3:::cloud-trail-logs-imat/*"
+            ]
+        }
+    ]
+}
+```
+
+
+```{sh}
+
+aws s3api list-objects-v2 --profile imat --bucket imat-cache--use1-az6--x-s3
+
+```
+
+#### Authorized Principals
+
+```{bash}
+
+#| eval: false
+
+aws quicksight list-users --aws-account-id $imat_account_id --namespace default --profile quicksight
+
+```
+
+
+```{bash}
+
+# Define variables
+SOURCE_ROLE_ARN="arn:aws:iam::xxxxxxxxxxxx:role/quicksight-cross-account"
+
+SOURCE_SESSION_NAME="CheckRolePermissionsSession"
+TARGET_PROFILE="mushin"
+
+# Assume the role using the mushin account profile
+ASSUME_ROLE_OUTPUT=$(aws sts assume-role --role-arn $SOURCE_ROLE_ARN --role-session-name $SOURCE_SESSION_NAME --profile $TARGET_PROFILE)
+
+# Check if assume role was successful
+if [ $? -ne 0 ]; then
+    echo "Failed to assume role"
+    exit 1
+fi
+
+# Extract temporary credentials from the assume-role output
+AWS_ACCESS_KEY_ID=$(echo $ASSUME_ROLE_OUTPUT | jq -r '.Credentials.AccessKeyId')
+AWS_SECRET_ACCESS_KEY=$(echo $ASSUME_ROLE_OUTPUT | jq -r '.Credentials.SecretAccessKey')
+AWS_SESSION_TOKEN=$(echo $ASSUME_ROLE_OUTPUT | jq -r '.Credentials.SessionToken')
+
+# Export the temporary credentials
+export AWS_ACCESS_KEY_ID
+export AWS_SECRET_ACCESS_KEY
+export AWS_SESSION_TOKEN
+
+# Get the role name from the role ARN
+ROLE_NAME=$(echo $SOURCE_ROLE_ARN | awk -F/ '{print $NF}')
+
+# List the inline policies attached to the role
+INLINE_POLICIES=$(aws iam list-role-policies --role-name $ROLE_NAME)
+
+# List the managed policies attached to the role
+MANAGED_POLICIES=$(aws iam list-attached-role-policies --role-name $ROLE_NAME)
+
+# Describe each inline policy
+for POLICY_NAME in $(echo $INLINE_POLICIES | jq -r '.PolicyNames[]'); do
+    echo "Inline Policy: $POLICY_NAME"
+    aws iam get-role-policy --role-name $ROLE_NAME --policy-name "$POLICY_NAME"
+done
+
+# Describe each managed policy
+for POLICY_ARN in $(echo $MANAGED_POLICIES | jq -r '.AttachedPolicies[].PolicyArn'); do
+    echo "Managed Policy: $POLICY_ARN"
+    POLICY_VERSION=$(aws iam get-policy --policy-arn $POLICY_ARN | jq -r '.Policy.DefaultVersionId')
+    aws iam get-policy-version --policy-arn $POLICY_ARN --version-id $POLICY_VERSION
+done
+
+# Unset the temporary credentials after checking the permissions
+unset AWS_ACCESS_KEY_ID
+unset AWS_SECRET_ACCESS_KEY
+unset AWS_SESSION_TOKEN
+
+echo "Permission check completed."
+
+```
+
+### Test Assessment
+
+#### Test Folder
+
+```{bash eval=FALSE}
+
+aws s3 sync s3://{bucket_name}/assessments/10910/ '10910C' --profile quicksight
+
+```
+
+#### Most Recent Test Assessment ID
+
+```{bash most-recent-assessment}
+#| eval: false
+
+folder_list=$(aws s3 ls "s3://$source_bucket/assessments/" --profile quicksight | awk '/\/$/ {sub("/",""); print $NF}')
+
+# Convert to numeric list and find max value
+max_value=0
+for i in $folder_list; do
+    # Check if the folder name is a valid integer
+    if [[ $i =~ ^[0-9]+$ ]]; then
+        if [ "$i" -gt "$max_value" ]; then
+            max_value=$i
+        fi
+    else
+        echo "Skipping non-integer folder: $i"
+    fi
+done
+
+# Save max value to environment variable 'assessment_id'
+export test_id=$((max_value + 1))
+
+# Print for confirmation
+echo "Highest Assessment ID is: $max_value"
+echo "Next Assessment ID is: $test_id"
+echo "Environment variable test_id set to: $test_id"
+
+# Save the document to a file
+echo "$test_id" > test_id.txt
+
+
+```
+
+#### Upload Sample Assessment to Latest Bucket for Testing
+
+```{bash}
+
+if [ -f test_id.txt ]; then
+    test_id=$(cat test_id.txt)
+else
+    echo "test_id.txt not found"
+    exit 1
+fi
+
+# Change to test assessment directory
+cd test_assessment_10910
+
+# Copy the directory to S3
+aws s3 cp . "s3://$source_bucket/assessments/10910" --recursive --profile quicksight
+
+```
+
+### Create Dashboard from Definition
+
+```{bash eval=FALSE}
+
+aws quicksight describe-dashboard-definition --dashboard-id 'cb4e0c9d-3771-4997-b274-7b9e25e3b66e' --aws-account-id xxxxxxxxxxxx | jq '.Definition' > dashboard_definition_base.json
+
+```
+
+```{bash eval=FALSE}   
+
+aws quicksight describe-data-source --aws-account-id xxxxxxxxxxxx --data-source-id 'AssessmentTable-datasource-template' > datasource_definition_base.json
+
+```
+
+```{bash eval=FALSE}   
+
+aws quicksight describe-data-set --aws-account-id xxxxxxxxxxxx --data-set-id 'AssessmentTable-dataset-template' > dataset_definition_base.json
+
+```
+
+#### Datasets in DynamoDB
+
+```{python}
+
+import boto3
+import os
+import logging
+from boto3.dynamodb.conditions import Key, Attr
+
+# Initialize the logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Initialize AWS clients and resources
+dynamodb_resource = boto3.resource('dynamodb', region_name='us-east-1')
+s3_client = boto3.client('s3')
+
+# Configuration
+dynamodb_table = os.getenv('DYNAMODB_TABLE', 'imat-dashboard-datasets')
+aws_account_id = os.getenv('AWS_ACCOUNT_ID', 'xxxxxxxxxxxx')
+region = os.getenv('AWS_REGION', 'us-east-1')
+manifest_bucket = os.environ.get('MANIFEST_BUCKET', 'assessments-manifests')
+
+assessment_id = '20200215440'
+
+
+# Function to check the object and return the dataset_id
+def check_object_and_return_key(bucket_name, object_key, assessment_id):
+    try:
+        # Use head_object to check if the object exists and retrieve its metadata
+        s3_client.head_object(Bucket=bucket_name, Key=object_key)
+        dataset_id = construct_dataset_id(object_key, assessment_id)  # Construct the dataset_id
+        return dataset_id
+    except s3_client.exceptions.NoSuchKey:
+        return None
+      
+      
+def construct_dataset_id(object_key, assessment_id):
+    file_name = object_key.split("/")[-1]  # Extract the file name from the object key
+    file_name_without_ext = file_name.rsplit('.', 1)[0]  # Remove the file extension
+    file_id = file_name_without_ext.replace('_', '-')  # Replace underscores with hyphens
+    dataset_id = f'{file_id}-dataset-{assessment_id}'  # Construct the dataset ID
+    return dataset_id
+
+
+# Lookup table mapping S3 keys to DynamoDB dataset IDs
+lookup_table = {
+    f"s3://{bucket_name}/assessments/{assessment_id}/cos-calculators/AssessmentParameterDataMapTable.csv": f"AssessmentParameterDataMapTable-dataset-{assessment_id}",
+    f"s3://{bucket_name}/assessments/{assessment_id}/cos-calculators/AssessmentTable.csv": f"AssessmentTable-dataset-{assessment_id}",
+    f"s3://{bucket_name}/assessments/{assessment_id}/cosi_embark.csv": f"cosi-embark-dataset-{assessment_id}",
+    f"s3://{bucket_name}/assessments/{assessment_id}/cosi_water_embark.csv": f"cosi-water-embark-dataset-{assessment_id}",
+    f"s3://{bucket_name}/assessments/{assessment_id}/cosii_vii_embark.csv": f"cosii-vii-embark-dataset-{assessment_id}",
+    f"s3://{bucket_name}/assessments/{assessment_id}/cosiiip_embark.csv": f"cosiiip-embark-dataset-{assessment_id}",
+    f"s3://{bucket_name}/assessments/{assessment_id}/cosiv_embark.csv": f"cosiv-embark-dataset-{assessment_id}",
+    f"s3://{bucket_name}/assessments/{assessment_id}/cosvi_embark.csv": f"cosvi-embark-dataset-{assessment_id}",
+    f"s3://{bucket_name}/assessments/{assessment_id}/cosix_embark.csv": f"cosix-embark-dataset-{assessment_id}",
+    f"s3://{bucket_name}/assessments/{assessment_id}/ForceFlow_joined.csv": f"ForceFlow-joined-dataset-{assessment_id}",
+    f"s3://{bucket_name}/assessments/{assessment_id}/RD_I_POS_Location_joined.csv": f"RD-I-POS-Location-joined-dataset-{assessment_id}",
+    f"s3://{bucket_name}/assessments/{assessment_id}/RD_I_Ration_Costs_joined.csv": f"RD-I-Ration-Costs-joined-dataset-{assessment_id}",
+    f"s3://{bucket_name}/assessments/{assessment_id}/RD_IW_PaxLocationAll_joined.csv": f"RD-IW-PaxLocationAll-joined-dataset-{assessment_id}",
+    f"s3://{bucket_name}/assessments/{assessment_id}/RD_IW_Ration_Costs_joined.csv": f"RD-IW-Ration-Costs-joined-dataset-{assessment_id}",
+    f"s3://{bucket_name}/assessments/{assessment_id}/cos-calculators/cos-i-water/output/RD_IW_POS_Requirement.csv": f"RD-IW-POS-Requirement-dataset-{assessment_id}",
+    f"s3://{bucket_name}/assessments/{assessment_id}/cos-calculators/cos-ii-vii/output/RD_II_VII_DailyTE_WithDimensions.csv": f"RD-II-VII-DailyTE-WithDimensions-dataset-{assessment_id}"
+}
+
+matched_keys = []
+missing_dynamodb_matches = []
+
+for s3_uri, dataset_id in lookup_table.items():
+    # Extract bucket and key from S3 URI
+    s3_path = s3_uri.replace("s3://", "")
+    bucket_name, object_key = s3_path.split('/', 1)
+    
+    # Verify if the S3 object exists
+    try:
+        s3_dataset_id = check_object_and_return_key(bucket_name, object_key, assessment_id)
+        print(f"S3 object exists: {s3_uri}")
+
+        # Query DynamoDB to check if the dataset exists
+        table = dynamodb_resource.Table(dynamodb_table)
+        response = table.query(
+            KeyConditionExpression=Key('dataset_id').eq(dataset_id),
+            FilterExpression=Attr('Dataset_Created').exists()
+        )
+
+        if response.get('Items') and s3_dataset_id == dataset_id:
+            matched_keys.append(s3_uri)
+            print(f"Matched: S3 key {s3_uri} with DynamoDB dataset_id: {dataset_id}")
+        else:
+            missing_dynamodb_matches.append(s3_uri)
+            print(f"No match found in DynamoDB for S3 key {s3_uri}")
+
+    except s3_client.exceptions.NoSuchKey:
+        missing_dynamodb_matches.append(s3_uri)
+        print(f"S3 object not found: {s3_uri}")
+
+
+# Return matched and unmatched dataset IDs
+def get_matched_and_unmatched_datasets():
+    return {
+        "matched_keys": matched_keys,
+        "missing_dynamodb_matches": missing_dynamodb_matches
+    }
+    
+    
+```
+
+
+```{python}
+
+# Example usage
+result = get_matched_and_unmatched_datasets()
+print(f"Matched datasets: {result['matched_keys']}")
+print(f"Unmatched datasets: {result['missing_dynamodb_matches']}")
+
+    
+```
+
+
+```{python}
+
+# Initialize AWS clients and resources
+dynamodb_resource = boto3.resource('dynamodb', region_name='us-east-1')
+s3_client = boto3.client('s3')
+
+# Configuration
+dynamodb_table = os.getenv('DYNAMODB_TABLE', 'imat-dashboard-datasets')
+aws_account_id = os.getenv('AWS_ACCOUNT_ID', 'xxxxxxxxxxxx')
+region = os.getenv('AWS_REGION', 'us-east-1')
+
+
+def query_dynamodb_for_datasets(dynamodb_resource, dynamodb_table, assessment_id):
+    """Query DynamoDB table for available datasets for the given assessment_id"""
+    # Query DynamoDB to check if the dataset exists and has the status "Dataset_Created"
+    table = dynamodb_resource.Table(dynamodb_table)
+    response = table.query(
+        KeyConditionExpression=Key('assessment_id').eq(f'{assessment_id}'),
+        FilterExpression=Attr('Dataset_Created').exists()
+    )
+    datasets = []
+    for item in response.get('Items', []):
+        datasets.append(item['dataset_id'])
+    return datasets
+
+```
+
+```{python}
+
+datasets = query_dynamodb_for_datasets(dynamodb_resource, dynamodb_table, '20200215441')
+
+datasets
+
+```
+
+```{pyhton}
+import boto3
+from boto3.dynamodb.conditions import Key, Attr
+
+# Initialize AWS clients and resources
+dynamodb_resource = boto3.resource('dynamodb', region_name='us-east-1')
+s3_client = boto3.client('s3')
+
+# Configuration
+dynamodb_table = os.getenv('DYNAMODB_TABLE', 'imat-dashboard-datasets')
+aws_account_id = os.getenv('AWS_ACCOUNT_ID', 'xxxxxxxxxxxx')
+region = os.getenv('AWS_REGION', 'us-east-1')
+
+def query_dynamodb_for_specific_dataset(dynamodb_resource, dynamodb_table, assessment_id, dataset_id):
+    """Query DynamoDB table for a specific dataset for the given assessment_id"""
+    # Query DynamoDB to check if the specific dataset exists and has the status "Dataset_Created"
+    table = dynamodb_resource.Table(dynamodb_table)
+    response = table.query(
+        KeyConditionExpression=Key('assessment_id').eq(f'{assessment_id}') & Key('dataset_id').eq(f'{dataset_id}'),
+        FilterExpression=Attr('Dataset_Created').exists()
+    )
+    
+    # Check if the dataset exists
+    if response.get('Items'):
+        return True  # Dataset exists with "Dataset_Created" status
+    else:
+        return False  # Dataset not found or "Dataset_Created" status doesn't exist
+```
+
+
+```{pyhton}
+
+# Example usage
+dataset_exists = query_dynamodb_for_specific_dataset(dynamodb_resource, dynamodb_table, '20200215441', 'AssessmentTable-dataset-20200215441')
+
+if dataset_exists:
+    print("The dataset exists.")
+else:
+    print("The dataset does not exist.")
+
+```
+
+#### Update Source Entity based on Available Datasets
+
+```{python}
+
+def construct_file_id_from_manifest(object_key):
+    # Split the object key by "/" to get the full prefix parts
+    full_s3_prefix = object_key.split("/")
+    # Extract the filename (the last part of the split)
+    file_name = full_s3_prefix[-1]
+    # Remove the extension from the filename
+    file_name_without_ext = file_name.rsplit('.', 1)[0]
+    file_id = file_name_without_ext.replace('_', '-')
+    return file_id
+  
+def construct_file_name(object_key):
+    # Split the object key by "/" to get the full prefix parts
+    full_s3_prefix = object_key.split("/")
+    # Extract the filename (the last part of the split)
+    file_name = full_s3_prefix[-1]
+    # Remove the extension from the filename
+    file_name_without_ext = file_name.rsplit('.', 1)[0]
+    return file_name
+
+def construct_file_name_from_manifest(object_key):
+    # Split the object key by "/" to get the full prefix parts
+    full_s3_prefix = object_key.split("/")
+    # Extract the filename (the last part of the split)
+    file_name = full_s3_prefix[-1]
+    # Remove the extension from the filename
+    file_name_without_ext = file_name.rsplit('.', 1)[0]
+    # remove the prefix from the filename
+    file_name = file_name_without_ext.replace('manifest_', '')
+    return file_name
+  
+def construct_file_id_from_manifest(object_key):
+    # Split the object key by "/" to get the full prefix parts
+    full_s3_prefix = object_key.split("/")
+    # Extract the filename (the last part of the split)
+    file_name = full_s3_prefix[-1]
+    # Remove the extension from the filename
+    file_name_without_ext = file_name.rsplit('.', 1)[0]
+    # remove the prefix from the filename
+    file_name = file_name_without_ext.replace('manifest_', '')
+    file_id = file_name.replace('_', '-')
+    return file_id
+
+```
+
+
+```{python}
+
+object_key = '2003/manifest_cosii_vii_embark.json'
+
+file_id = construct_file_id_from_manifest(object_key)
+
+file_name = construct_file_name_from_manifest(object_key)
+
+file_id
+
+file_name
+
+
+```
+
+
+```{python}
+
+def update_source_entity_with_datasets(source_entity, datasets):
+    """Update the source entity based on available datasets"""
+    updated_source_entity = source_entity.copy()
+    updated_source_entity['datasets'] = []  
+    for dataset_id in datasets:
+        updated_source_entity['datasets'].append(dataset_id)
+    return updated_source_entity
+
+```
+
+
+```{python}
+
+def create_dashboard(client, aws_account_id, dashboard_id, dashboard_name, source_entity, permissions):
+    try:
+        response = client.create_dashboard(
+            AwsAccountId=aws_account_id,
+            DashboardId=dashboard_id,
+            Name=dashboard_name,
+            SourceEntity=source_entity,
+            Permissions=permissions,
+            DashboardPublishOptions={
+                'AdHocFilteringOption': {
+                    'AvailabilityStatus': 'ENABLED'
+                },
+                'ExportToCSVOption': {
+                    'AvailabilityStatus': 'ENABLED'
+                },
+                'SheetControlsOption': {
+                    'VisibilityState': 'EXPANDED'
+                }
+            }
+        )
+        logger.info(f"Dashboard {dashboard_id} created successfully.")
+        return response
+    except client.exceptions.ResourceExistsException as e:
+        logger.error(f"Dashboard {dashboard_id} already exists: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Error creating dashboard {dashboard_id}: {e}")
+        raise
+      
+```
+
+#### Update Dashboard
+
+```{python}
+
+def get_dashboard_version(client, aws_account_id, dashboard_id):
+    try:
+        response = client.describe_dashboard(
+            AwsAccountId=aws_account_id,
+            DashboardId=dashboard_id
+        )
+        version_number = response['Dashboard']['Version']['VersionNumber']
+        logger.info(f"Dashboard {dashboard_id} current version: {version_number}")
+        return version_number
+    except Exception as e:
+        logger.error(f"Error retrieving version for dashboard {dashboard_id}: {e}")
+        raise
+```
+
+
+```{python}
+
+def update_dashboard_parameters(dashboard_id, version_number, datasets):
+    try:
+        parameters = {
+            'DashboardId': dashboard_id,
+            'VersionNumber': version_number,
+            'Datasets': datasets
+        }
+        logger.info(f"Generated parameters for dashboard update: {parameters}")
+        return parameters
+    except Exception as e:
+        logger.error(f"Error generating parameters for dashboard {dashboard_id}: {e}")
+        raise
+
+
+```
+
+
+```{python}
+
+def update_dashboard(client, aws_account_id, dashboard_id, dashboard_name, parameters, publish_options, permissions):
+    try:
+        response = client.update_dashboard(
+            AwsAccountId=aws_account_id,
+            DashboardId=dashboard_id,
+            Name=dashboard_name,
+            Parameters=parameters,
+            SourceEntity=source_entity,
+            DashboardPublishOptions=publish_options,
+            Permissions=permissions
+        )
+        logger.info(f"Dashboard {dashboard_id} updated successfully.")
+        return response
+    except Exception as e:
+        logger.error(f"Error updating dashboard {dashboard_id}: {e}")
+        raise
+      
+```
+
+### Dashboard URLs
+
+```{bash}
+
+aws quicksight describe-dashboard --aws-account-id xxxxxxxxxxxx --dashboard-id RD-Assessment-10910
+
+```
+
+
+```{bash}
+
+aws quicksight list-dashboards --aws-account-id $imat_account_id --profile imat
+
+```
+
+#### Generate URL
+
+```{bash}
+
+aws quicksight generate-embed-url-for-anonymous-user --aws-account-id $imat_account_id --authorized-resource-arns "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dashboard/RD-IW-PaxLocationAll-dashboard-20200215117" --experience-configuration Dashboard={InitialDashboardId=$dashboard_id} --namespace default --session-lifetime-in-minutes 600 --profile imat --query 'EmbedUrl'
+
+```
+
+```{bash}
+
+aws quicksight generate-embed-url-for-anonymous-user --aws-account-id $imat_account_id --authorized-resource-arns "arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dashboard/RD-IW-PaxLocationAll-dashboard-20200215117" --experience-configuration Dashboard={InitialDashboardId=$dashboard_id} --namespace default --session-lifetime-in-minutes 600 --profile imat --query 'EmbedUrl' --output text > url1.txt
+
+```
+
+```{r}
+
+url <- read_lines('url1.txt')
+
+browseURL(url)
+
+```
+
+#### Get URL
+
+```{bash}
+
+aws quicksight get-dashboard-embed-url --aws-account-id $imat_account_id --dashboard-id $dashboard_id --identity-type ANONYMOUS --namespace default --session-lifetime 600 --profile quicksight --query 'EmbedUrl' --output text > url.txt
+
+```
+
+```{r}
+
+url <- read_lines('url.txt')
+
+browseURL(url)
+
+```

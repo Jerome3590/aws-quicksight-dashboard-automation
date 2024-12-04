@@ -1,0 +1,1672 @@
+{
+    "Status": 200,
+    "DataSet": {
+        "Arn": "arn:aws:quicksight:us-east-1:548995328310:dataset/RD-IX-Requirement-dataset-template",
+        "DataSetId": "RD-IX-Requirement-dataset-template",
+        "Name": "RD_IX_Requirement_dataset_template",
+        "CreatedTime": "2024-07-19T02:20:01.361000-04:00",
+        "LastUpdatedTime": "2024-07-19T02:20:01.361000-04:00",
+        "PhysicalTableMap": {
+            "RD-IX-Requirement-physicalTable": {
+                "S3Source": {
+                    "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/RD-IX-Requirement-datasource-template",
+                    "UploadSettings": {
+                        "Format": "CSV",
+                        "StartFromRow": 1,
+                        "ContainsHeader": true,
+                        "TextQualifier": "DOUBLE_QUOTE",
+                        "Delimiter": ","
+                    },
+                    "InputColumns": [
+                        {
+                            "Name": "AssessmentNumber",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Class_of_Supply",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "REGION",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "MEF",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "LOCATION_NAME",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "IS_SECREP_NIIN",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "BATTERY_FLAG",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "AverageEAP",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TAMCN_NIIN",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TAMCN_of_End_Item",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "NIIN_of_End_Item",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ITEM_DESIGNATOR_CODE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "COLLOQUIAL_NAME",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TAMCN_QTY_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TAMCN_QTY_POS1",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TAMCN_QTY_POS2",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TAMCN_QTY_POS3",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TAMCN_QTY_BEYOND",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "EQUIP_CRIT_RNK",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CRITICALITY_CODE_MAPPING",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "AVERAGE_SCORE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "FSC",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "NIIN",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "NOMENCLATURE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Annual_Burn_Rate_Per_TAMCN_NIIN",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Annual_Repair_Rate_Per_TAMCN_NIIN",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Annual_Burn_Rate_Per_TAMCN_NIIN_With_Repairing",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNIT_OF_ISSUE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNIT_PACK_WEIGHT",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNIT_PACK_WEIGHT_DECIPHERED",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNIT_PACK_SIZE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNIT_PACK_LENGTH_DECIPHERED",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNIT_PACK_WIDTH_DECIPHERED",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNIT_PACK_DEPTH_DECIPHERED",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DERIVED_UNIT_PACK_CUBE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNIT_PACK_CUBE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNIT_PACK_CUBE_DECIPHERED",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNPKG_ITEM_DIM",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNPKG_LENGTH_DECIPHERED",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNPKG_WIDTH_DECIPHERED",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNPKG_DEPTH_DECIPHERED",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNPKG_ITEM_WEIGHT",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNPKG_ITEM_WEIGHT_DECIPHERED",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DSS_CUBE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNIT_PACK_QTY_FROM_DSS_CUBE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ITEM_CUBE_FT_FROM_DSS_CUBE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNIT_PRICE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Selected_CI",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "InventoryToConsider",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "YearsOfDemandDataUsed",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Required_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Required_POS1",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Required_POS2",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Required_POS3",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Required_BEYOND",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Total_Required_Less_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Total_Required_Selected_Confidence",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_POS1",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_POS2",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_POS3",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_BEYOND",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Total_Cost_Less_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Total_Cost_Selected_Confidence",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_80_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_80_POS1",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_80_POS2",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_80_POS3",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_80_BEYOND",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Total_Cost_80_Less_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Total_Cost_80_Confidence",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_85_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_85_POS1",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_85_POS2",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_85_POS3",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_85_BEYOND",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Total_Cost_85_Less_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Total_Cost_85_Confidence",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_90_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_90_POS1",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_90_POS2",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_90_POS3",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_90_BEYOND",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Total_Cost_90_Less_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Total_Cost_90_Confidence",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_95_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_95_POS1",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_95_POS2",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_95_POS3",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_95_BEYOND",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Total_Cost_95_Less_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Total_Cost_95_Confidence",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_99_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_99_POS1",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_99_POS2",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_99_POS3",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Cost_99_BEYOND",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Total_Cost_99_Less_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Total_Cost_99_Confidence",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "keepRec",
+                            "Type": "STRING"
+                        }
+                    ]
+                }
+            }
+        },
+        "LogicalTableMap": {
+            "RD-IX-Requirement-logicalTable": {
+                "Alias": "RD_IX_Requirement_template",
+                "DataTransforms": [
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "AssessmentNumber",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Class_of_Supply",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "REGION",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "MEF",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "FIE",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "LOCATION_NAME",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "IS_SECREP_NIIN",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "BATTERY_FLAG",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "AverageEAP",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TAMCN_NIIN",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TAMCN_of_End_Item",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "NIIN_of_End_Item",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ITEM_DESIGNATOR_CODE",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "COLLOQUIAL_NAME",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TAMCN_QTY_FIE",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TAMCN_QTY_POS1",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TAMCN_QTY_POS2",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TAMCN_QTY_POS3",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TAMCN_QTY_BEYOND",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "EQUIP_CRIT_RNK",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "CRITICALITY_CODE_MAPPING",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "AVERAGE_SCORE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "FSC",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "NIIN",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "NOMENCLATURE",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Annual_Burn_Rate_Per_TAMCN_NIIN",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Annual_Repair_Rate_Per_TAMCN_NIIN",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Annual_Burn_Rate_Per_TAMCN_NIIN_With_Repairing",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNIT_OF_ISSUE",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNIT_PACK_WEIGHT",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNIT_PACK_WEIGHT_DECIPHERED",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNIT_PACK_SIZE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNIT_PACK_LENGTH_DECIPHERED",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNIT_PACK_WIDTH_DECIPHERED",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNIT_PACK_DEPTH_DECIPHERED",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DERIVED_UNIT_PACK_CUBE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNIT_PACK_CUBE",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNIT_PACK_CUBE_DECIPHERED",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNPKG_ITEM_DIM",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNPKG_LENGTH_DECIPHERED",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNPKG_WIDTH_DECIPHERED",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNPKG_DEPTH_DECIPHERED",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNPKG_ITEM_WEIGHT",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNPKG_ITEM_WEIGHT_DECIPHERED",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DSS_CUBE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNIT_PACK_QTY_FROM_DSS_CUBE",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ITEM_CUBE_FT_FROM_DSS_CUBE",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNIT_PRICE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Selected_CI",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "InventoryToConsider",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "YearsOfDemandDataUsed",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Required_FIE",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Required_POS1",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Required_POS2",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Required_POS3",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Required_BEYOND",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Total_Required_Less_FIE",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Total_Required_Selected_Confidence",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_FIE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_POS1",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_POS2",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_POS3",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_BEYOND",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Total_Cost_Less_FIE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Total_Cost_Selected_Confidence",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_80_FIE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_80_POS1",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_80_POS2",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_80_POS3",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_80_BEYOND",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Total_Cost_80_Less_FIE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Total_Cost_80_Confidence",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_85_FIE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_85_POS1",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_85_POS2",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_85_POS3",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_85_BEYOND",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Total_Cost_85_Less_FIE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Total_Cost_85_Confidence",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_90_FIE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_90_POS1",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_90_POS2",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_90_POS3",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_90_BEYOND",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Total_Cost_90_Less_FIE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Total_Cost_90_Confidence",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_95_FIE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_95_POS1",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_95_POS2",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_95_POS3",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_95_BEYOND",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Total_Cost_95_Less_FIE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Total_Cost_95_Confidence",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_99_FIE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_99_POS1",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_99_POS2",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_99_POS3",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Cost_99_BEYOND",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Total_Cost_99_Less_FIE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Total_Cost_99_Confidence",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "keepRec",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "ProjectOperation": {
+                            "ProjectedColumns": [
+                                "AssessmentNumber",
+                                "Class_of_Supply",
+                                "REGION",
+                                "MEF",
+                                "FIE",
+                                "LOCATION_NAME",
+                                "IS_SECREP_NIIN",
+                                "BATTERY_FLAG",
+                                "AverageEAP",
+                                "TAMCN_NIIN",
+                                "TAMCN_of_End_Item",
+                                "NIIN_of_End_Item",
+                                "ITEM_DESIGNATOR_CODE",
+                                "COLLOQUIAL_NAME",
+                                "TAMCN_QTY_FIE",
+                                "TAMCN_QTY_POS1",
+                                "TAMCN_QTY_POS2",
+                                "TAMCN_QTY_POS3",
+                                "TAMCN_QTY_BEYOND",
+                                "EQUIP_CRIT_RNK",
+                                "CRITICALITY_CODE_MAPPING",
+                                "AVERAGE_SCORE",
+                                "FSC",
+                                "NIIN",
+                                "NOMENCLATURE",
+                                "Annual_Burn_Rate_Per_TAMCN_NIIN",
+                                "Annual_Repair_Rate_Per_TAMCN_NIIN",
+                                "Annual_Burn_Rate_Per_TAMCN_NIIN_With_Repairing",
+                                "UNIT_OF_ISSUE",
+                                "UNIT_PACK_WEIGHT",
+                                "UNIT_PACK_WEIGHT_DECIPHERED",
+                                "UNIT_PACK_SIZE",
+                                "UNIT_PACK_LENGTH_DECIPHERED",
+                                "UNIT_PACK_WIDTH_DECIPHERED",
+                                "UNIT_PACK_DEPTH_DECIPHERED",
+                                "DERIVED_UNIT_PACK_CUBE",
+                                "UNIT_PACK_CUBE",
+                                "UNIT_PACK_CUBE_DECIPHERED",
+                                "UNPKG_ITEM_DIM",
+                                "UNPKG_LENGTH_DECIPHERED",
+                                "UNPKG_WIDTH_DECIPHERED",
+                                "UNPKG_DEPTH_DECIPHERED",
+                                "UNPKG_ITEM_WEIGHT",
+                                "UNPKG_ITEM_WEIGHT_DECIPHERED",
+                                "DSS_CUBE",
+                                "UNIT_PACK_QTY_FROM_DSS_CUBE",
+                                "ITEM_CUBE_FT_FROM_DSS_CUBE",
+                                "UNIT_PRICE",
+                                "Selected_CI",
+                                "InventoryToConsider",
+                                "YearsOfDemandDataUsed",
+                                "Required_FIE",
+                                "Required_POS1",
+                                "Required_POS2",
+                                "Required_POS3",
+                                "Required_BEYOND",
+                                "Total_Required_Less_FIE",
+                                "Total_Required_Selected_Confidence",
+                                "Cost_FIE",
+                                "Cost_POS1",
+                                "Cost_POS2",
+                                "Cost_POS3",
+                                "Cost_BEYOND",
+                                "Total_Cost_Less_FIE",
+                                "Total_Cost_Selected_Confidence",
+                                "Cost_80_FIE",
+                                "Cost_80_POS1",
+                                "Cost_80_POS2",
+                                "Cost_80_POS3",
+                                "Cost_80_BEYOND",
+                                "Total_Cost_80_Less_FIE",
+                                "Total_Cost_80_Confidence",
+                                "Cost_85_FIE",
+                                "Cost_85_POS1",
+                                "Cost_85_POS2",
+                                "Cost_85_POS3",
+                                "Cost_85_BEYOND",
+                                "Total_Cost_85_Less_FIE",
+                                "Total_Cost_85_Confidence",
+                                "Cost_90_FIE",
+                                "Cost_90_POS1",
+                                "Cost_90_POS2",
+                                "Cost_90_POS3",
+                                "Cost_90_BEYOND",
+                                "Total_Cost_90_Less_FIE",
+                                "Total_Cost_90_Confidence",
+                                "Cost_95_FIE",
+                                "Cost_95_POS1",
+                                "Cost_95_POS2",
+                                "Cost_95_POS3",
+                                "Cost_95_BEYOND",
+                                "Total_Cost_95_Less_FIE",
+                                "Total_Cost_95_Confidence",
+                                "Cost_99_FIE",
+                                "Cost_99_POS1",
+                                "Cost_99_POS2",
+                                "Cost_99_POS3",
+                                "Cost_99_BEYOND",
+                                "Total_Cost_99_Less_FIE",
+                                "Total_Cost_99_Confidence",
+                                "keepRec"
+                            ]
+                        }
+                    }
+                ],
+                "Source": {
+                    "PhysicalTableId": "RD-IX-Requirement-physicalTable"
+                }
+            }
+        },
+        "OutputColumns": [
+            {
+                "Name": "AssessmentNumber",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Class_of_Supply",
+                "Type": "STRING"
+            },
+            {
+                "Name": "REGION",
+                "Type": "STRING"
+            },
+            {
+                "Name": "MEF",
+                "Type": "STRING"
+            },
+            {
+                "Name": "FIE",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "LOCATION_NAME",
+                "Type": "STRING"
+            },
+            {
+                "Name": "IS_SECREP_NIIN",
+                "Type": "STRING"
+            },
+            {
+                "Name": "BATTERY_FLAG",
+                "Type": "STRING"
+            },
+            {
+                "Name": "AverageEAP",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "TAMCN_NIIN",
+                "Type": "STRING"
+            },
+            {
+                "Name": "TAMCN_of_End_Item",
+                "Type": "STRING"
+            },
+            {
+                "Name": "NIIN_of_End_Item",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ITEM_DESIGNATOR_CODE",
+                "Type": "STRING"
+            },
+            {
+                "Name": "COLLOQUIAL_NAME",
+                "Type": "STRING"
+            },
+            {
+                "Name": "TAMCN_QTY_FIE",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "TAMCN_QTY_POS1",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "TAMCN_QTY_POS2",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "TAMCN_QTY_POS3",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "TAMCN_QTY_BEYOND",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "EQUIP_CRIT_RNK",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "CRITICALITY_CODE_MAPPING",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "AVERAGE_SCORE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "FSC",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "NIIN",
+                "Type": "STRING"
+            },
+            {
+                "Name": "NOMENCLATURE",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Annual_Burn_Rate_Per_TAMCN_NIIN",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Annual_Repair_Rate_Per_TAMCN_NIIN",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Annual_Burn_Rate_Per_TAMCN_NIIN_With_Repairing",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "UNIT_OF_ISSUE",
+                "Type": "STRING"
+            },
+            {
+                "Name": "UNIT_PACK_WEIGHT",
+                "Type": "STRING"
+            },
+            {
+                "Name": "UNIT_PACK_WEIGHT_DECIPHERED",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "UNIT_PACK_SIZE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "UNIT_PACK_LENGTH_DECIPHERED",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "UNIT_PACK_WIDTH_DECIPHERED",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "UNIT_PACK_DEPTH_DECIPHERED",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "DERIVED_UNIT_PACK_CUBE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "UNIT_PACK_CUBE",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "UNIT_PACK_CUBE_DECIPHERED",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "UNPKG_ITEM_DIM",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "UNPKG_LENGTH_DECIPHERED",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "UNPKG_WIDTH_DECIPHERED",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "UNPKG_DEPTH_DECIPHERED",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "UNPKG_ITEM_WEIGHT",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "UNPKG_ITEM_WEIGHT_DECIPHERED",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "DSS_CUBE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "UNIT_PACK_QTY_FROM_DSS_CUBE",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "ITEM_CUBE_FT_FROM_DSS_CUBE",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "UNIT_PRICE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Selected_CI",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "InventoryToConsider",
+                "Type": "STRING"
+            },
+            {
+                "Name": "YearsOfDemandDataUsed",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Required_FIE",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Required_POS1",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Required_POS2",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Required_POS3",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Required_BEYOND",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Total_Required_Less_FIE",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Total_Required_Selected_Confidence",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Cost_FIE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_POS1",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_POS2",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_POS3",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_BEYOND",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Total_Cost_Less_FIE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Total_Cost_Selected_Confidence",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_80_FIE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_80_POS1",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_80_POS2",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_80_POS3",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_80_BEYOND",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Total_Cost_80_Less_FIE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Total_Cost_80_Confidence",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_85_FIE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_85_POS1",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_85_POS2",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_85_POS3",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_85_BEYOND",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Total_Cost_85_Less_FIE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Total_Cost_85_Confidence",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_90_FIE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_90_POS1",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_90_POS2",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_90_POS3",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_90_BEYOND",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Total_Cost_90_Less_FIE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Total_Cost_90_Confidence",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_95_FIE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_95_POS1",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_95_POS2",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_95_POS3",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_95_BEYOND",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Total_Cost_95_Less_FIE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Total_Cost_95_Confidence",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_99_FIE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_99_POS1",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_99_POS2",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_99_POS3",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Cost_99_BEYOND",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Total_Cost_99_Less_FIE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "Total_Cost_99_Confidence",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "keepRec",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            }
+        ],
+        "ImportMode": "SPICE",
+        "ConsumedSpiceCapacityInBytes": 0,
+        "DataSetUsageConfiguration": {
+            "DisableUseAsDirectQuerySource": false,
+            "DisableUseAsImportedSource": false
+        }
+    },
+    "RequestId": "b47b05f8-73fd-4d09-904d-e62f315fcd9c"
+}

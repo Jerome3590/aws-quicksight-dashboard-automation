@@ -1,0 +1,1622 @@
+---
+title: "Embark Aggregations"
+author: "Jerome Dixon"
+execute: 
+  eval: false
+format: 
+  html: 
+    link-external-icon: true
+    link-external-newwindow: true
+    toc: true
+    toc-depth: 5
+    code-fold: true
+    code-summary: "Show the code"
+    embed-resources: true
+    default-image-extension: svg
+    dpi: 600
+    theme: cosmo
+---
+
+```{r libraries}
+
+library(aws.s3)
+library(dplyr)
+library(readr)
+library(DT)
+library(purrr)
+library(tidyr)
+library(jsonlite)
+library(here)
+library(reticulate)
+library(magrittr)
+
+# For bash scripts
+Sys.setenv(assessment_id = "template")
+Sys.setenv(bucket_assessment = "wrsa-dev.canallc.com")
+Sys.setenv(wrsa_account_id = "689967901690")
+Sys.setenv(imat_account_id = "548995328310")
+Sys.setenv(bucket_manifests = "manifests-quicksight")
+Sys.setenv(bucket_table_maps = "imat-table-map--use1-az6--x-s3")
+Sys.setenv(owner_arn="arn:aws:quicksight:us-east-1:548995328310:user/default/AWSReservedSSO_AdministratorAccess_38a624caf67c613f/jdixon3874")
+Sys.setenv(imat_assessments_s3 = "wrsa-dev.canallc.com/assessments")
+Sys.setenv(aws_region = "us-east-1")
+
+options(scipen = 999)
+
+assessment_id <- Sys.getenv("assessment_id")
+assessment_bucket <- Sys.getenv("bucket_assessment")
+
+```
+
+```{python}
+
+# Specify the bucket name and assessment ID
+bucket_name = r.assessment_bucket
+assessment_id = r.assessment_id
+
+```
+
+# Requirement: Aggregate Square Feet (SQFT), Square Tons (STONS), and Twenty Foot Equivalent Unit (TEUs) across all Classes of Supply (CoS).
+
+What we know - we can derive all necessary metrics from pallet count, height of pallet, and type of material on pallet.
+
+Solution: Get pallet count, height, weight at individual Class of Supply (CoS) level. Calculate SQFT, STONS, and TEUs at Class of Supply level. Aggregate and visualize with parent-child visualizations.
+
+Group by Region, Location, MEF, POS.
+
+[**Embark Files:**]{.underline}
+
+✅ Class I: Class_I_RD_Embark.csv
+
+✅ Class I/Water: RD_IW_PaxLocationAll.csv
+
+✅ Class II: RD_II_VII_DailyTE_WithDimensions.csv
+
+Class II(ICCE): N/A (with Pax)
+
+✅ Class IIIP: RD_IIIP_PSP_POL_Pkg_NSN_Requirements_PBI.csv
+
+✅ Class IV: RD_IV_Daily_Requirements.csv
+
+Class V: N/A (Ammunition)
+
+✅ Class VI: Class_VI_RD_Embark.csv
+
+✅ Class VII: RD_II_VII_DailyTE_WithDimensions.csv
+
+Class VII(ICCE): N/A (with Pax)
+
+Class VIII: N/A (Medical)
+
+✅ Class IX: RD_IX_Requirements.csv
+
+Class X: N/A (Reconstruction/Nation Building)
+
+Common Data Structure across CoS:
+
+\['Class_of_Supply', 'Region', 'Location_Name', 'COS_Type', 'Region_MEF_Lead', 'POS', 'Type', 'Units', 'Value'\]
+
+COS_Type:
+
+-   Ration_Type
+
+-   Water_Type
+
+-   II_VII_UIC_TAMCN_Type
+
+-   IIIP_UIC_TAMCN_Type
+
+-   HCP_Type
+
+-   IX_UIC_TAMCN_Type
+
+Type:
+
+-   Units
+
+-   Weight
+
+-   Volume
+
+Units:
+
+-   STON
+
+-   LBs
+
+-   CuFT
+
+-   SQFT
+
+-   Gallons
+
+-   Pallets
+
+-   TEUs
+
+-   FEUs
+
+Example S3 File Location Structure
+
+-   RD_I_POS_Pallet_Requirement.csv, s3://wrsa-dev.canallc.com/assessments/{assessment_id}/cos-calculators/cos-i-subsistence/output/RD_I_POS_Pallet_Requirement.csv
+
+-   RD_IW_PaxLocationAll.csv, s3://wrsa-dev.canallc.com/assessments/{assessment_id}/cos-calculators/cos-i-water/output/RD_IW_PaxLocationAll.csv
+
+-   RD_II_VII_DailyTE_WithDimensions.csv, s3://wrsa-dev.canallc.com/assessments/{assessment_id}/cos-calculators/cos-ii-vii/output/RD_II_VII_DailyTE_WithDimensions.csv
+
+-   RD_VI_POS_Pallet_Requirement.csv, s3://wrsa-dev.canallc.com/assessments/{assessment_id}/cos-calculators/cos-vi/output/RD_VI_POS_Pallet_Requirement.csv
+
+### Class I Subsistence
+
+```{r eval=FALSE}
+
+i_subsistence <- read_csv(here("embark_cos","RD_I_POS_Pallet_Requirement.csv"))
+
+```
+
+-   cosi.py
+
+```{python}
+
+import pandas as pd
+import boto3
+import numpy as np
+from io import StringIO
+
+
+def read_s3_csv(s3_client, bucket_name, object_key):
+    """Utility function to read CSV from S3."""
+    obj = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+    return pd.read_csv(StringIO(obj['Body'].read().decode('utf-8')))
+  
+
+def cosi_embark(bucket_name, assessment_id):
+    s3_client = boto3.client('s3')
+    
+    # Define file paths
+    input_file_path = f'assessments/{assessment_id}/cos-calculators/cos-i-subsistence/output/RD_I_POS_Pallet_Requirement.csv'
+    output_file_path = f'assessments/{assessment_id}/cos-calculators/cosi_embark.csv'
+
+    # Check for the existence of the COS1 Embark CSV file
+    try:
+        s3_client.head_object(Bucket=bucket_name, Key=output_file_path)
+        print("Class I Embark file already exists")
+        return
+    except s3_client.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == '404':
+            print("Class I Embark file does not exist, creating...")
+        else:
+            raise
+
+    # Read data from S3
+    df = read_s3_csv(s3_client, bucket_name, input_file_path)
+    df.columns = df.columns.str.replace('DOS', 'POS')
+    df.columns = df.columns.str.replace('Ration_Type', 'COS_Type')
+    df.columns = df.columns.str.replace('BEYOND', 'BEYOND_Units')
+    
+    # Drop columns
+    df = df.drop(columns=['CAP_Name', 'CAP_Names'])
+    
+    # Drop columns that contain 'FEUs'
+    df = df.loc[:, ~df.columns.str.contains('FEUs')]
+    
+    # Create 'Type' column based on 'Ration_Type'
+    df['Type'] = np.where(df['COS_Type'] == 'MEALS_READY_TO_EAT_MRE', 'Box', 'Module')
+    
+    
+    # Conditional calculations for BEYOND columns
+    df['BEYOND_Units_Pallet_Qty'] = df.apply(
+        lambda row: row['BEYOND_Units'] / 48 if row['COS_Type'] == 'MEALS_READY_TO_EAT_MRE' else
+        row['BEYOND_Units'] / 8 if row['COS_Type'] in ['UGR_H_S_BREAKFAST', 'UGR_H_S_LUNCH_DINNER', 'UGR_M_BREAKFAST', 'UGR_M_LUNCH_DINNER'] else None, axis=1)
+    
+    
+    df['BEYOND_Units_Pallet_Tot_CuFT'] = df.apply(
+        lambda row: row['BEYOND_Units_Pallet_Qty'] * 56.10 if row['COS_Type'] == 'MEALS_READY_TO_EAT_MRE' else
+        row['BEYOND_Units_Pallet_Qty'] * 47.80 if row['COS_Type'] in ['UGR_H_S_BREAKFAST', 'UGR_H_S_LUNCH_DINNER', 'UGR_M_BREAKFAST', 'UGR_M_LUNCH_DINNER'] else None, axis=1)
+    
+    
+    df['BEYOND_Units_Pallet_Tot_Wt(lbs)'] = df.apply(
+        lambda row: row['BEYOND_Units_Pallet_Qty'] * 1098.00 * 1.02 if row['COS_Type'] == 'MEALS_READY_TO_EAT_MRE' else
+        row['BEYOND_Units_Pallet_Qty'] * 933.14 * 1.13 if row['COS_Type'] == 'UGR_H_S_BREAKFAST' else
+        row['BEYOND_Units_Pallet_Qty'] * 1060.43 * 1.13 if row['COS_Type'] == 'UGR_H_S_LUNCH_DINNER' else
+        row['BEYOND_Units_Pallet_Qty'] * 800.00 * 1.13 if row['COS_Type'] in ['UGR_M_BREAKFAST', 'UGR_M_LUNCH_DINNER'] else None, axis=1)
+    
+    
+    df['BEYOND_Units_Pallet_Tot_TEUs'] = df.apply(
+        lambda row: row['BEYOND_Units_Pallet_Qty'] / 16 if row['COS_Type'] in ['MEALS_READY_TO_EAT_MRE', 'UGR_H_S_BREAKFAST', 'UGR_H_S_LUNCH_DINNER', 'UGR_M_BREAKFAST', 'UGR_M_LUNCH_DINNER'] else None, axis=1)
+      
+      
+    # Pivot to long format for POS and BEYOND columns
+    df_long = df.melt(
+        id_vars=['AssessmentNumber', 'Class_of_Supply', 'COS_Type', 'Region', 'Region_MEF_Lead', 'Location_ID', 'Location_Name', 'Unit of Issue', 'Type'],
+        value_vars=[
+            'POS1_Units', 'POS2_Units', 'POS3_Units', 'BEYOND_Units',
+            'POS1_Units_Pallet_Qty', 'POS2_Units_Pallet_Qty', 'POS3_Units_Pallet_Qty',
+            'POS1_Units_Pallet_Tot_CuFT', 'POS2_Units_Pallet_Tot_CuFT', 'POS3_Units_Pallet_Tot_CuFT',
+            'POS1_Units_Pallet_Tot_Wt(lbs)', 'POS2_Units_Pallet_Tot_Wt(lbs)', 'POS3_Units_Pallet_Tot_Wt(lbs)',
+            'POS1_Units_Pallet_Tot_TEUs', 'POS2_Units_Pallet_Tot_TEUs', 'POS3_Units_Pallet_Tot_TEUs',
+            'BEYOND_Units_Pallet_Qty', 'BEYOND_Units_Pallet_Tot_CuFT', 'BEYOND_Units_Pallet_Tot_Wt(lbs)', 'BEYOND_Units_Pallet_Tot_TEUs'
+        ],
+        var_name='Metric',
+        value_name='Value'
+    )
+    
+    # Extract POS and Metric_Type from Metric
+    df_long['POS'] = df_long['Metric'].str.extract(r'(POS\d|BEYOND)')
+    df_long['Metric_Type'] = df_long['Metric'].str.replace(r'^(POS\d_|BEYOND_)(Units_Pallet_|Units_|)', '', regex=True)
+    
+    # Drop the original Metric column
+    df_long = df_long.drop(columns=['Metric'])
+    
+    # Pivot the data back to wide format with desired columns
+    df_final = df_long.pivot_table(
+        index=['Class_of_Supply', 'Region', 'Location_Name', 'Region_MEF_Lead', 'POS', 'COS_Type', 'Type'],
+        columns='Metric_Type',
+        values='Value',
+        aggfunc='first'
+    ).reset_index()
+    
+    # Rename columns to match desired structure
+    df_final.columns = ['Class_of_Supply', 'Region', 'Location_Name', 'Region_MEF_Lead', 
+        'POS', 'COS_Type', 'UI', 'CUFT', 'TEUS', 'Pallets', 'Weight_lbs', 'Qty']
+    
+    
+    # Define the cost per unit for each COS_Type
+    cost_dict = {
+        'MEALS_READY_TO_EAT_MRE': 119.03,
+        'UGR_H_S_BREAKFAST': 403.90,
+        'UGR_H_S_LUNCH_DINNER': 364.91,
+        'UGR_M_BREAKFAST': 273.33,
+        'UGR_M_LUNCH_DINNER': 273.33
+    }
+    
+    # Create the 'Cost' column based on 'COS_Type' and 'Units'
+    df_final['Cost'] = df_final.apply(lambda row: row['Qty'] * cost_dict.get(row['COS_Type'], 0), axis=1)
+    
+    # Empty column with zeros called 'SQFT' to march other CoS
+    df_final['SQFT'] = 0
+    
+    # Fill all NAs with zeros before calcualtion
+    df_final = df_final.fillna(0)
+
+    # Confirm with Terry
+    df_final["TEUS"] = df_final["Weight_lbs"] / 1024
+    df_final["STONS"] = df_final["Weight_lbs"] / 2000 + (df_final["TEUS"] * 5000) / 2000
+    
+    # Fill all NAs with zeros after calculation
+    df_final = df_final.fillna(0)
+    
+    # Filter rows where STONs > 0
+    df_final = df_final.query('STONS > 0')
+    
+    df_final = df_final[['Class_of_Supply', 'Region', 'Location_Name', 'Region_MEF_Lead',
+        'COS_Type', 'POS', 'UI', 'Qty', 'Pallets', 'CUFT', 'SQFT', 'TEUS', 'Weight_lbs', 'STONS', 'Cost']]
+    
+    # Convert DataFrame to CSV and upload to S3
+    csv_buffer = StringIO()
+    df_final.to_csv(csv_buffer, index=True)
+    s3_client.put_object(Bucket=bucket_name, Key=output_file_path, Body=csv_buffer.getvalue())
+    print("Class I Embark CSV file has been uploaded to S3.")
+    
+    
+    
+```
+
+```{python}
+
+# Specify the bucket name and assessment ID
+bucket_name = r.assessment_bucket
+assessment_id = r.assessment_id
+
+# Call the function
+cosi_embark(bucket_name, assessment_id)
+
+```
+
+```{r}
+
+bucket <- "wrsa-dev.canallc.com"
+path <- "assessments/20200215179/cos-calculators/cosi_embark.csv"
+
+
+embark_cosi <- s3read_using(FUN = read.csv, object = path, bucket = bucket)
+
+embark_cosi
+
+```
+
+```{bash eval=FALSE}
+
+aws s3 sync s3://wrsa-dev.canallc.com/assessments/$assessment_id/ embark_cos_processed --profile cana --exclude "*" --include "*embark*.csv"
+
+```
+
+### Class I - Water
+
+```{r eval=FALSE}
+
+i_water <- read_csv(here("embark_cos","RD_IW_PaxLocationAll.csv"))
+
+```
+
+-   cosi_water.py
+
+```{python}
+
+import pandas as pd
+import boto3
+import numpy as np
+from io import StringIO
+
+def read_s3_csv(s3_client, bucket_name, object_key):
+    """Utility function to read CSV from S3."""
+    obj = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+    return pd.read_csv(StringIO(obj['Body'].read().decode('utf-8')))
+
+
+def cosi_water_embark(bucket_name, assessment_id):
+    s3_client = boto3.client('s3')
+
+    # Define file paths
+    input_file_path = f'assessments/{assessment_id}/cos-calculators/cos-i-water/output/RD_IW_PaxLocationAll.csv'
+    output_file_path = f'assessments/{assessment_id}/cos-calculators/cosi_water_embark.csv'
+
+    # Check for the existence of the COS1 Embark CSV file
+    try:
+        s3_client.head_object(Bucket=bucket_name, Key=output_file_path)
+        print("Class I Water Embark file already exists")
+        return
+    except s3_client.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == '404':
+            print("Class I Water Embark file does not exist, creating...")
+        else:
+            raise
+
+    # Read data from S3
+    df = read_s3_csv(s3_client, bucket_name, input_file_path)
+    df.columns = df.columns.str.replace('DOS_Period', 'POS')
+    df['POS'] = df['POS'].str.replace(r'^DOS', 'POS', regex=True)
+    
+    # Define the identifier and value columns
+    id_vars = ['Class_of_Supply', 'Region', 'Location_Name', 'Region_MEF_Lead','POS']
+    value_vars = ['Potable_Rqmt', 'Non-Potable_Rqmt', 'Drinking_Rqmt',]
+    
+    df_long = pd.melt(df, id_vars=id_vars, value_vars=value_vars, var_name='COS_Type', value_name='Units')
+    
+    # Perform calculations conditionally for where COS_Type==Drinking_Rqmt only
+    df_long['Pallets'] = df_long.apply(lambda row: row['Units'] / 50 * (1 + 0.02 * 0.04) if row['COS_Type'] == 'Drinking_Rqmt' else None, axis=1)
+    df_long['CUFT'] = df_long.apply(lambda row: row['Pallets'] * 56.11 if row['COS_Type'] == 'Drinking_Rqmt' else None, axis=1)
+    df_long['Weight_lbs'] = df_long.apply(lambda row: row['Pallets'] * 1700 if row['COS_Type'] == 'Drinking_Rqmt' else None, axis=1)
+    df_long['TEUS'] = df_long.apply(lambda row: (row['Pallets'] / 16) * (1 + 0.063) if row['COS_Type'] == 'Drinking_Rqmt' else None, axis=1)
+    df_long['Cost'] = df_long.apply(lambda row: row['Units'] * 3.05 if row['COS_Type'] == 'Drinking_Rqmt' else None, axis=1)
+    
+    # Add column 'UI'
+    df_long['UI'] = df_long['COS_Type'].apply(lambda x: 'Case' if x == 'Drinking_Rqmt' else 'Gals')
+    
+     # Empty column with zeros called 'SQFT' to march other CoS
+    df_long['SQFT'] = 0
+    
+     # Fill all NAs with zeros before calcualtion
+    df_long = df_long.fillna(0)
+
+    # Confirm with Terry
+    df_long["TEUS"] = df_long["Weight_lbs"] / 1024
+    df_long["STONS"] = df_long["Weight_lbs"] / 2000 + (df_long["TEUS"] * 5000) / 2000
+    
+    # Fill all NAs with zeros after calculation
+    df_long = df_long.fillna(0)
+    
+    # Rename columns using a dictionary
+    rename_dict = {
+          'Units': 'Qty'
+      }
+      
+    df_long.rename(columns=rename_dict, inplace=True)
+    
+    # Filter rows where STONs > 0
+    df_long = df_long.query('STONS > 0')
+    
+    final_columns = ['Class_of_Supply', 'Region', 'Location_Name', 'Region_MEF_Lead', 'COS_Type',
+        'POS', 'UI', 'Qty', 'Pallets', 'CUFT','SQFT', 'TEUS', 'Weight_lbs', 'STONS', 'Cost']
+    
+    df_long = df_long[final_columns]
+
+    # Convert DataFrame to CSV and upload to S3
+    csv_buffer = StringIO()
+    df_long.to_csv(csv_buffer, index=True)
+    s3_client.put_object(Bucket=bucket_name, Key=output_file_path, Body=csv_buffer.getvalue())
+    print("Class I Water Embark CSV file has been uploaded to S3.")
+
+
+```
+
+```{python}
+
+# Specify the bucket name and assessment ID
+bucket_name = r.assessment_bucket
+assessment_id = r.assessment_id
+
+# Call the function
+cosi_water_embark(bucket_name, assessment_id)
+
+```
+
+```{r}
+
+bucket <- "wrsa-dev.canallc.com"
+path <- "assessments/20200215179/cos-calculators/cosi_water_embark.csv"
+
+
+embark_cosi_water <- s3read_using(FUN = read.csv, object = path, bucket = bucket)
+
+embark_cosi_water
+
+```
+
+### Class II/VII
+
+```{r eval=FALSE}
+
+ii_vii <- read_csv(here("embark_cos","RD_II_VII_DailyTE_WithDimensions.csv"))
+
+```
+
+-   cosii_vii.py
+
+```{python}
+
+import pandas as pd
+import boto3
+from io import StringIO
+
+
+def read_s3_csv(s3_client, bucket_name, object_key):
+    """Utility function to read CSV from S3."""
+    obj = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+    return pd.read_csv(StringIO(obj['Body'].read().decode('utf-8')))
+
+
+
+def cosii_vii_embark(bucket_name, assessment_id):
+    s3_client = boto3.client('s3')
+
+    input_file_path = f'assessments/{assessment_id}/cos-calculators/cos-ii-vii/output/RD_II_VII_DailyTE_WithDimensions.csv'
+    output_file_path = f'assessments/{assessment_id}/cos-calculators/cosii_vii_embark.csv'
+    
+    # Check for the existence of the COS1 Embark CSV file
+    try:
+        s3_client.head_object(Bucket=bucket_name, Key=output_file_path)
+        print("Class II/VII Embark file already exists")
+        return
+    except s3_client.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == '404':
+            print("Class II/VII Embark file does not exist, creating...")
+        else:
+            raise
+    
+    # Read data from S3
+    df = read_s3_csv(s3_client, bucket_name, input_file_path)
+    
+    # Convert columns to string if necessary and concatenate
+    df['COS_Type'] = df['TAMCN'].astype(str) + '_' + "Class_II/VII"
+    
+    # Drop the specified columns
+    columns_to_drop = [
+        'AssessmentNumber', 'MEF', 'MSE', 'UIC', 'TAMCN_Group', 'TAMCN', 'NIIN', 'Day', 'SQFT(C)',
+        'COLLOQUIAL_NAME', 'TAM_STATUS', 'ITEM_EXIT_DATE', 'STORES_ACCOUNT_CODE', 'ITEM_DESIGNATOR_CODE',
+        'READINESS_REPORTABLE_CODE', 'PREF_NIIN_IND', 'PREF_NIIN_RNK', 'EQUIP_CRIT_RNK', 'CHILD_TAMCN',
+        'TARIFF_FCTR', 'CLASSII_VII_INDICATOR', 'Mission_TE', 'RD', 'CAP_Name', 'CAP_Names',
+        'ILOC', 'Unit_Name', 'Priority', 'Parent_UIC', 'AAC', 'Prepo_Enabled', 'isArty', 'TAMCN_5',
+        'IND SQFT', 'IND CUFT', 'IND STON', 'IND MTON', 'EMBARK', 'PO ITEM', 'LOCAL TAM', 
+        'STANDARD UNIT PRICE', 'REPLACEMENT COST', 'CLASSOFSUPPLY'
+    ]
+    
+    df = df.drop(columns=columns_to_drop, errors='ignore')
+    
+    # Add Unit of Issue - symbolic for repair part
+    df['UI'] = 'TE_Orig_Qty'
+    
+    # Rename columns using a dictionary
+    rename_dict = {
+        'TE_Orig_Qty': 'Qty',
+        'CUFT(C)': 'cuft_',
+        'STANDARD_UNIT_PRICE': 'Unit_Price',
+        'SQFT':'sqft_',
+        'STON':'ston_',
+        'TEU_Equivalents':'teu_'
+    }
+          
+    df.rename(columns=rename_dict, inplace=True)
+    
+    # Calculations
+    df['STONS'] = df['Qty'] * df['ston_']
+    df['SQFT'] = df['Qty'] * df['sqft_']
+    df['TEUS'] = df['Qty'] * df['teu_']
+    df['CUFT'] = df['Qty'] * df['cuft_']
+    df['Cost'] = df['Unit_Price'] * df['Qty']
+    
+    
+    # Filter rows where STONs > 0
+    df = df.query('STONS > 0')
+    
+    
+    # Sort dataframe
+    final_columns = ['Class_of_Supply', 'Region', 'Location_Name', 'Region_MEF_Lead', 
+        'COS_Type','POS', 'UI', 'Qty', 'Unit_Price','DIM HEIGHT INCHES', 'DIM LENGTH INCHES', 
+        'DIM WIDTH INCHES','ston_','sqft_','cuft_','teu_', 'CUFT','SQFT', 'TEUS', 'STONS', 'Cost']
+    
+    df = df[final_columns]
+    
+    # Convert DataFrame to CSV and upload to S3
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer, index=True)
+    s3_client.put_object(Bucket=bucket_name, Key=output_file_path, Body=csv_buffer.getvalue())
+    print("Class II/VII Embark CSV file has been uploaded to S3.")
+
+    
+```
+
+```{python}
+
+# Specify the bucket name and assessment ID
+bucket_name = r.assessment_bucket
+assessment_id = r.assessment_id
+
+# Call the function
+cosii_vii_embark(bucket_name, assessment_id)
+
+```
+
+```{r}
+
+bucket <- "wrsa-dev.canallc.com"
+path <- "assessments/10910/cos-calculators/cosii_vii_embark.csv"
+embark_cosii_vii <- s3read_using(FUN = read.csv, object = path, bucket = bucket)
+
+embark_cosii_vii
+
+```
+
+### Class IIIP
+
+```{r}
+
+iiip <- read_csv(here("embark_cos","RD_IIIP_POL_Pkg_NSN_Requirements_PBI.csv"))
+
+```
+
+-   cosiiip.py
+
+```{python}
+
+import pandas as pd
+import re
+import boto3
+from io import StringIO
+
+
+def read_s3_csv(s3_client, bucket_name, object_key):
+    """Utility function to read CSV from S3."""
+    obj = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+    return pd.read_csv(StringIO(obj['Body'].read().decode('utf-8')))
+
+
+def cosiiip_embark(bucket_name, assessment_id):
+    s3_client = boto3.client('s3')
+    
+    # Define file paths
+    input_file_path = f'assessments/{assessment_id}/cos-calculators/cos-iii-p/output/RD_IIIP_POL_Pkg_NSN_Requirements_PBI.csv'
+    output_file_path = f'assessments/{assessment_id}/cos-calculators/cosiiip_embark.csv'
+
+    # Check for the existence of the COSIV Embark CSV file
+    try:
+        s3_client.head_object(Bucket=bucket_name, Key=output_file_path)
+        print("Class IIIP Embark file already exists")
+        return
+    except s3_client.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == '404':
+            print("Class IIIP Embark file does not exist, creating...")
+        else:
+            raise
+    
+    df = read_s3_csv(s3_client, bucket_name, input_file_path)
+    df.rename(columns={
+      "IND STON": "ston_",
+      "IND CUFT": "cuft_", 
+      "IND TEUs_Cube": "teu_", 
+      "IND SQFT_Cube": "sqft_",
+      "MEF": "Region_MEF_Lead",
+      "POL_Type": "COS_Type",
+      "POL_Pkg_Type": "UI",
+      "REGION": "Region",
+      "LOCATION_NAME": "Location_Name",
+      "STANDARD UNIT PRICE": "Unit_Price"
+      }, inplace=True)
+    
+    # Drop the specified columns
+    columns_to_drop = [
+    'AssessmentNumber','TAMCN','NSN','CEC','SOS','IND SQFT_LW'
+    ]
+    
+    df = df.drop(columns=columns_to_drop, errors='ignore')
+    
+    # Calculations
+    df['STONS'] = df['Qty'] * df['ston_']
+    df['SQFT'] = df['Qty'] * df['sqft_']
+    df['TEUS'] = df['Qty'] * df['teu_']
+    df['CUFT'] = df['Qty'] * df['cuft_']
+    df['Cost'] = df['Unit_Price'] * df['Qty']
+    
+    # Filter rows where STONs > 0
+    df = df.query('STONS > 0')
+    
+    # Sort dataframe
+    final_columns = ['Class_of_Supply', 'Region', 'Location_Name', 'Region_MEF_Lead',
+        'COS_Type','POS', 'UI', 'Qty', 'POL_PKG_NSN', 'NIIN', 'NOMENCLATURE', 
+        'Unit_Price','DIM HEIGHT INCHES', 'DIM LENGTH INCHES', 'DIM WIDTH INCHES',
+        'ston_','sqft_','cuft_','teu_', 'CUFT','SQFT', 'TEUS', 'STONS', 'Cost']
+    
+    df = df[final_columns]
+    
+    # Convert DataFrame to CSV and upload to S3
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer, index=True)
+    s3_client.put_object(Bucket=bucket_name, Key=output_file_path, Body=csv_buffer.getvalue())
+    print("Class IIIP Embark CSV file has been uploaded to S3.")
+
+  
+```
+
+```{python}
+
+# Specify the bucket name and assessment ID
+bucket_name = r.assessment_bucket
+assessment_id = r.assessment_id
+
+# Call the function
+cosiiip_embark(bucket_name, assessment_id)
+
+```
+
+```{r}
+
+bucket <- "wrsa-dev.canallc.com"
+path <- "assessments/10910/cos-calculators/cosiiip_embark.csv"
+embark_cosiiip <- s3read_using(FUN = read.csv, object = path, bucket = bucket)
+
+embark_cosiiip
+
+```
+
+### Class IV
+
+```{r}
+
+iv <- read_csv("embark_cos/RD_IV_Daily_Requirements.csv")
+
+```
+
+-   cosiv.py
+
+```{python}
+
+import pandas as pd
+import boto3
+from io import StringIO
+
+
+def read_s3_csv(s3_client, bucket_name, object_key):
+    """Utility function to read CSV from S3."""
+    obj = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+    return pd.read_csv(StringIO(obj['Body'].read().decode('utf-8')))
+
+
+def cosiv_embark(bucket_name, assessment_id):
+    s3_client = boto3.client('s3')
+
+    # Define file paths
+    input_file_path = f'assessments/{assessment_id}/cos-calculators/cos-iv/output/RD_IV_Daily_Requirements.csv'
+    output_file_path = f'assessments/{assessment_id}/cos-calculators/cosiv_embark.csv'
+
+    # Check for the existence of the COSIV Embark CSV file
+    try:
+        s3_client.head_object(Bucket=bucket_name, Key=output_file_path)
+        print("Class IV Embark file already exists")
+        return
+    except s3_client.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == '404':
+            print("Class IV Embark file does not exist, creating...")
+        else:
+            raise
+
+    # Read data from S3
+    df = read_s3_csv(s3_client, bucket_name, input_file_path)
+    
+    df.rename(columns={
+      "UOI_QTY": "Qty",
+      "Total_Price": "Cost", 
+      "Total_Weight_LB": "Weight_lbs", 
+      "Total_Volume_CuFt": "CUFT",
+      "NIIN": "COS_Type",
+      "Price": "Unit_Price",
+      "Volume":"volume",
+      "Weight":"weight"
+      }, inplace=True)
+      
+    df["SQFT"] = 0
+    df["TEUS"] = 0
+    df["STONS"] = df["Weight_lbs"] / 2000
+    
+    # Filter rows where STONs > 0
+    df = df.query('STONS > 0')
+    
+    # Keep the specified columns
+    columns_to_keep = ['Class_of_Supply', 'Region', 'Location_Name', 'Region_MEF_Lead',
+        'COS_Type', 'Nomenclature', 'POS', 'UI', 'Qty', 'Unit_Price','volume', 'weight', 
+        'CUFT','SQFT', 'TEUS', 'Weight_lbs', 'STONS', 'Cost']
+    
+    # Drop all columns except those in columns_to_keep
+    df = df[columns_to_keep]
+
+    # Convert DataFrame to CSV and upload to S3
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer, index=True)
+    s3_client.put_object(Bucket=bucket_name, Key=output_file_path, Body=csv_buffer.getvalue())
+    print("Class IV Embark CSV file has been uploaded to S3.")
+
+
+```
+
+```{python}
+
+# Specify the bucket name and assessment ID
+bucket_name = r.assessment_bucket
+assessment_id = r.assessment_id
+
+# Call the function
+cosiv_embark(bucket_name, assessment_id)
+
+```
+
+```{r}
+
+bucket <- "wrsa-dev.canallc.com"
+path <- "assessments/10910/cos-calculators/cosiv_embark.csv"
+embark_cosiv <- s3read_using(FUN = read.csv, object = path, bucket = bucket)
+
+embark_cosiv
+
+```
+
+### Class VI
+
+```{r}
+
+vi <- read_csv("embark_cos/RD_VI_POS_Pallet_Requirement.csv")
+
+```
+
+-   cosvi.py
+
+```{python}
+
+import pandas as pd
+import boto3
+from io import StringIO
+
+
+def read_s3_csv(s3_client, bucket_name, object_key):
+    """Utility function to read CSV from S3."""
+    obj = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+    return pd.read_csv(StringIO(obj['Body'].read().decode('utf-8')))
+
+
+def cosvi_embark(bucket_name, assessment_id):
+    s3_client = boto3.client('s3')
+
+    # Define file paths
+    input_file_path = f'assessments/{assessment_id}/cos-calculators/cos-vi/output/RD_VI_POS_Pallet_Requirement.csv'
+    output_file_path = f'assessments/{assessment_id}/cos-calculators/cosvi_embark.csv'
+
+    # Check for the existence of the COSIV Embark CSV file
+    try:
+        s3_client.head_object(Bucket=bucket_name, Key=output_file_path)
+        print("Class VI Embark file already exists")
+        return
+    except s3_client.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == '404':
+            print("Class VI Embark file does not exist, creating...")
+        else:
+            raise
+
+    # Read data from S3
+    df = read_s3_csv(s3_client, bucket_name, input_file_path)
+
+    # Format columns
+    df.columns = df.columns.str.replace('DOS', 'POS')
+    
+    # Define the identifier and value columns
+    id_vars = ['Class_of_Supply', 'Region', 'Location_Name', 'HCP_Type', 'Region_MEF_Lead', 'Location_ID']
+    value_vars = [col for col in df.columns if col.startswith('POS')]
+    
+    # Melt the dataframe to long format
+    df_long = pd.melt(df, id_vars=id_vars, value_vars=value_vars, 
+                   var_name='Metric', value_name='Value')
+                   
+    
+    # Extract POS and Metric_Type from Metric
+    df_long['POS'] = df_long['Metric'].str.extract(r'(POS\d)')
+    df_long['Metric_Type'] = df_long['Metric'].str.replace(r'^(POS\d_Units_NIIN_Qty_|POS\d_Units_)', '', regex=True)
+    df_long['Metric_Type'] = df_long['Metric_Type'].str.replace(r'^Pallet_|POS\d_', '', regex=True)
+    
+    
+    # Pivot the data back to wide format with desired columns
+    df_final = df_long.pivot_table(
+        index=['Class_of_Supply', 'Region', 'Location_Name', 'Region_MEF_Lead', 'POS', 'HCP_Type'],
+        columns='Metric_Type',
+        values='Value',
+        aggfunc='first'
+    ).reset_index()
+    
+    # Format final df
+    df_final.rename(columns={
+        "HCP_Type": "COS_Type",
+        "NIIN_Qty": "Qty", 
+        "Qty": "Pallets", 
+        "Tot_Wt(lbs)": "Weight_lbs",
+        "Tot_CuFT": "CUFT",
+        "Tot_TEUs": "TEUS",
+        "Tot_FEUs": "FEUS",
+        "Units": "UI"
+    }, inplace=True)
+    
+    df_final["SQFT"] = 0
+    df_final["STONS"] = df_final["Weight_lbs"] / 2000
+    df_final["UI"] = "NIIN"
+    
+    # Filter rows where STONs, TEUs, and SQFT all > 0
+    df_final = df_final.query('STONS > 0')
+    
+    df_final = df_final[['Class_of_Supply', 'Region', 'Location_Name', 'Region_MEF_Lead',
+        'COS_Type', 'POS', 'UI', 'Qty', 'Pallets', 'CUFT', 'SQFT', 'TEUS', 'Weight_lbs', 'STONS']]
+
+
+    # Convert DataFrame to CSV and upload to S3
+    csv_buffer = StringIO()
+    df_final.to_csv(csv_buffer, index=True)
+    s3_client.put_object(Bucket=bucket_name, Key=output_file_path, Body=csv_buffer.getvalue())
+    print("Class VI Embark CSV file has been uploaded to S3.")
+    
+
+```
+
+```{python}
+
+# Specify the bucket name and assessment ID
+bucket_name = r.assessment_bucket
+assessment_id = r.assessment_id
+
+# Call the function
+cosvi_embark(bucket_name, assessment_id)
+
+```
+
+```{r}
+
+bucket <- "wrsa-dev.canallc.com"
+path <- "assessments/10910/cos-calculators/cosvi_embark.csv"
+embark_cosvi <- s3read_using(FUN = read.csv, object = path, bucket = bucket)
+
+embark_cosvi
+
+```
+
+### Class IX
+
+```{r}
+
+name_check <- read_csv(here("dimensional_data","name_check_with_estimates.csv"), show_col_types = FALSE)
+
+dim_data <- read_csv(here("dimensional_data","classix_dimensional_data.csv"), show_col_types = FALSE)
+
+
+```
+
+
+```{r}
+
+
+name_check %<>%
+  mutate(DSS_WEIGHT = `Weight (lbs)`,
+         DSS_CUBE = `Cube (ft²)`) %>%
+  select(NOMENCLATURE, DSS_WEIGHT, DSS_CUBE) %>% 
+  distinct()
+
+
+write_csv(name_check, here("dimensional_data", "name_check.csv"))
+
+
+```
+
+
+```{python}
+
+import pandas as pd
+
+ix = pd.read_csv("embark_cos/RD_IX_Requirement_Trimmed.csv")
+
+```
+
+```{r}
+
+ix <- py$ix 
+
+secreps <- py$ix %>% 
+  filter(`SECREP Flag` == 'TRUE') 
+
+batteries <- py$ix %>% 
+  filter(`Battery Flag` == 'TRUE')
+
+ix_updated <- ix %>% 
+  mutate(`Class_of_Supply` = case_when(
+    `Battery Flag` == 'TRUE' ~ 'IX B',
+    `SECREP Flag` == 'TRUE' ~ 'IX S',
+    TRUE ~ 'IX C'
+  ))
+
+consumables <- ix_updated %>% 
+  filter(`Class_of_Supply` == 'IX C')
+
+```
+
+```{r}
+
+consumables %<>% 
+  select(
+    AssessmentNumber,
+    Class_of_Supply,
+    Region,
+    MEF,
+    FIE,
+    `Location Name`,
+    TAMCN_NIIN,
+    TAMCN_of_End_Item,
+    NIIN_of_End_Item,
+    COLLOQUIAL_NAME,
+    TAMCN_NIIN_QTY_FIE,
+    TAMCN_NIIN_QTY_POS1,
+    TAMCN_NIIN_QTY_POS2,
+    TAMCN_NIIN_QTY_POS3,
+    TAMCN_NIIN_QTY_BEYOND,
+    `FSC of Part Required`,
+    `NIIN of Part Required`,
+    `Nomenclature of Part Required`,
+    UNIT_OF_ISSUE,
+    `DIM LENGTH INCHES`,
+    `DIM WIDTH INCHES`,
+    `DIM HEIGHT INCHES`,
+    `STANDARD UNIT PRICE`,
+    Required_FIE,
+    Required_POS1,
+    Required_POS2,
+    Required_POS3,
+    Required_BEYOND,
+    Total_Required_Less_FIE,
+    Total_Required_Selected_Confidence,
+    Value_FIE,
+    Value_POS1,
+    Value_POS2,
+    Value_POS3,
+    Value_BEYOND,
+    Total_Value_Less_FIE,
+    `IND STON`,
+    `IND SQFT`
+  ) %>% 
+  str()
+
+
+```
+
+#### Dimensional Data
+
+```{r}
+
+ix_dim_data <- read_csv(here("dimensional_data","classix_dimensional_data.csv"), show_col_types = FALSE)
+
+name_check <- read_csv(here("dimensional_data","name_check.csv"), show_col_types = FALSE)
+
+```
+
+```{r}
+
+niin_check <- ix_dim_data %>% 
+  filter(DSS_WEIGHT <= .000) %>% 
+  select(NIIN)
+
+name_check <- ix_dim_data %>% 
+  filter(DSS_WEIGHT <= .000) %>% 
+  select(NOMENCLATURE)
+
+
+write_csv(niin_check, here("dimensional_data", "niin_check.csv"))
+
+write_csv(name_check, here("dimensional_data", "name_check.csv"))
+
+
+```
+
+#### Perform ChatGPT/SA-SOR query for missing Weight/Cube
+#### Read ChatGPT query results back in
+
+```{r}
+
+ix_dim_data <- read_csv(here("dimensional_data","classix_dimensional_data.csv"), show_col_types = FALSE)
+
+name_check <- read_csv(here("dimensional_data","name_check.csv"), show_col_types = FALSE)
+
+```
+
+```{r}
+missing_data <- read_csv(here("dimensional_data","missing_data.csv"), show_col_types = FALSE)
+
+missing_data %<>% 
+  distinct(NIIN) 
+```
+
+```{r}
+# compare missing_data to ix_dim_data by NIIN column
+missing_data %<>% 
+  select(NIIN) %>% 
+  left_join(ix_dim_data, by = "NIIN") %>% 
+  select(NIIN, NOMENCLATURE, DSS_WEIGHT, DSS_CUBE) %>% 
+  filter(is.na(DSS_WEIGHT) | is.na(DSS_CUBE)) %>%
+  select(NIIN) %>% 
+  write_csv(here("dimensional_data", "missing_data_niins.csv"))
+```
+
+
+#### Add results back to original dimensional dataframe
+
+```{r}
+
+ix_dim_data %<>%
+  left_join(name_check, by = "NOMENCLATURE", suffix = c("", "_name_check")) %>%
+  mutate(
+    DSS_WEIGHT = if_else(DSS_WEIGHT <= 0, coalesce(DSS_WEIGHT_name_check, DSS_WEIGHT), DSS_WEIGHT),
+    DSS_CUBE = if_else(DSS_WEIGHT <= 0, coalesce(DSS_CUBE_name_check, DSS_CUBE), DSS_CUBE)
+  ) %>%
+  # Remove the extra columns from the join to clean up
+  select(-DSS_WEIGHT_name_check, -DSS_CUBE_name_check) %>%
+  distinct()
+
+write_csv(ix_dim_data, here("dimensional_data", "classix_dimensional_data_updated.csv"))
+
+```
+
+-   cosix.py
+
+```{r}
+
+df1 <- read_csv(here("embark_cos","RD_IX_Requirement_Trimmed.csv"))
+
+df2 <- read_csv(here("dimensional_data","classix_dimensional_data_updated.csv"))
+
+```
+
+
+```{r}
+df1 %>% 
+  str()
+```
+
+
+```{r}
+df1 %<>%
+  rename(
+    `Colloquial Name` = COLLOQUIAL_NAME,
+    Location_Name = `Location Name`,
+    UI = UNIT_OF_ISSUE,
+    Unit_Price = `STANDARD UNIT PRICE`,
+    Nomenclature = `Nomenclature of Part Required`,
+    NIIN = `NIIN of Part Required`
+  )
+
+df2 %<>%
+  rename(
+    `Colloquial Name` = COLLOQUIAL_NAME,
+    Unit_Price = UNIT_PRICE,
+    Nomenclature = NOMENCLATURE
+  ) %>% 
+  distinct(NIIN, Nomenclature, .keep_all = TRUE)
+
+
+# Join the DataFrames on NIIN and Nomenclature
+df <- df1 %>%
+  left_join(df2, by = c("NIIN", "Nomenclature"), suffix = c("_left", "_right"))
+
+# Update Class_of_Supply based on Battery Flag and SECREP Flag conditions
+df %<>%
+  mutate(Class_of_Supply = case_when(
+    `Battery Flag` == 'TRUE' ~ 'IX B',
+    `SECREP Flag` == 'TRUE' ~ 'IX S',
+    TRUE ~ 'IX C'
+  ))
+
+```
+
+
+```{r}
+df %>% 
+  str()
+```
+
+
+```{r}
+
+df %<>%
+  select(
+    AssessmentNumber, Class_of_Supply, Region, MEF, FIE, Location_Name,
+    TAMCN_NIIN, TAMCN_of_End_Item_left, NIIN_of_End_Item, `Colloquial Name_left`,
+    TAMCN_NIIN_QTY_FIE, TAMCN_NIIN_QTY_POS1, TAMCN_NIIN_QTY_POS2, TAMCN_NIIN_QTY_POS3,
+    TAMCN_NIIN_QTY_BEYOND, `FSC of Part Required`, NIIN, Nomenclature, UI,
+    Unit_Price_left, Required_FIE, Required_POS1, Required_POS2, Required_POS3, 
+    Required_BEYOND, Total_Required_Less_FIE, Total_Required_Selected_Confidence, 
+    Value_FIE, Value_POS1, Value_POS2, Value_POS3, Value_BEYOND, Total_Value_Less_FIE,     
+    Total_Value_Selected_Confidence, `IND STON`, `IND SQFT`, DSS_WEIGHT, DSS_CUBE,
+    `DIM LENGTH INCHES`, `DIM WIDTH INCHES`, `DIM HEIGHT INCHES`
+  ) %>% 
+  rename(
+    `Colloquial Name` = `Colloquial Name_left`,
+    TAMCN_of_End_Item = TAMCN_of_End_Item_left,
+    Unit_Price = Unit_Price_left
+  )
+
+
+```
+
+
+```{r}
+
+# Pivot columns ending in *_POS* and *_BEYOND to create a single POS column
+df %<>%
+  pivot_longer(
+    cols = matches("_(POS[0-9]+|BEYOND)$"),  # Matches columns ending in _POS1, _POS2, _POS3, _BEYOND, etc.
+    names_to = c(".value", "POS"),           # Splits the column names into base (prefix) and POS indicator
+    names_pattern = "(.*)_(POS[0-9]+|BEYOND)"  # Captures prefix and POS suffix
+  )
+
+```
+
+
+```{r}
+
+# Multiply DSS_WEIGHT and DSS_CUBE by the required quantities
+df %<>%
+  mutate(
+    FIE_Weight_lbs = DSS_WEIGHT * Required_FIE,
+    FIE_CUFT = DSS_CUBE * Required_FIE,
+    POS_Weight_lbs = DSS_WEIGHT * Required_POS,
+    POS_CUFT = cuft * Required_POS,
+    POS_SQFT = sqft * Required_POS
+  )
+
+# Reorder columns
+df %<>%
+  select(
+    Class_of_Supply, Region, Location_Name, MEF, UI, Unit_Price, TAMCN_of_End_Item,
+    `Colloquial Name`, NIIN, Nomenclature, FIE_CUFT, FIE_Weight_lbs, POS, POS_CUFT,  
+     POS_SQFT, POS_Weight_lbs
+  )
+
+
+```
+
+#### Test (template)
+
+```{python}
+
+import pandas as pd
+import boto3
+import numpy as np
+from io import StringIO
+import logging
+import json
+import shutil
+
+# Set up logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+s3_client = boto3.client('s3')
+dynamodb_client = boto3.client('dynamodb')
+
+
+def read_s3_csv(s3_client, bucket_name, object_key, dtype=None, usecols=None):
+    """Utility function to read CSV from S3."""
+    obj = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+    return pd.read_csv(StringIO(obj['Body'].read().decode('utf-8')), dtype=dtype, usecols=usecols)
+
+
+def check_file_exists(s3_client, bucket, key):
+    """Check if a file exists in S3 with retry logic."""
+    s3_client.head_object(Bucket=bucket, Key=key)
+
+
+def cosix_embark(s3_client, source_bucket, s3_key, assessment_id, target_bucket):
+    # Local files
+    source_path = '/var/task/classix_dimensional_data.csv'
+    destination_path = '/tmp/classix_dimensional_data.csv'
+
+    # Copy dimensional data lookup file to /tmp directory
+    shutil.copyfile(source_path, destination_path)
+
+    # Define file paths
+    input_file_path = s3_key
+    output_file_path = f'assessments/{assessment_id}/cosix_embark.csv'
+
+    # Check for the existence of the COSIX Embark CSV file
+    try:
+        s3_client.head_object(Bucket=target_bucket, Key=output_file_path)
+        logger.info("Class IX Embark file already exists")
+        return {
+            'statusCode': 200,
+            'body': 'File already exists',
+            's3_file_path': f's3://{target_bucket}/{output_file_path}'
+        }
+    except s3_client.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == '404':
+            logger.info("Class IX Embark file does not exist, creating...")
+        else:
+            raise
+
+    # Check for the input file to be available with retry logic
+    try:
+        check_file_exists(s3_client, source_bucket, input_file_path)
+    except s3_client.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == '404':
+            logger.error(f"Input file {input_file_path} does not exist.")
+            return {
+                'statusCode': 404,
+                'body': f'Input file {input_file_path} does not exist.'
+            }
+        else:
+            raise
+
+    # Read data from S3
+    columns_to_keep = [
+        "AssessmentNumber", "Class_of_Supply", "Region", "MEF", "FIE", "Location Name",
+        'SECREP Flag', 'Battery Flag',
+        "TAMCN_NIIN", "TAMCN_of_End_Item", "NIIN_of_End_Item", "COLLOQUIAL_NAME",
+        "TAMCN_NIIN_QTY_FIE", "TAMCN_NIIN_QTY_POS1", "TAMCN_NIIN_QTY_POS2", "TAMCN_NIIN_QTY_POS3",
+        "TAMCN_NIIN_QTY_BEYOND", "FSC of Part Required", "NIIN of Part Required",
+        "Nomenclature of Part Required", "UNIT_OF_ISSUE",
+        "STANDARD UNIT PRICE", "Required_FIE", "Required_POS1", "Required_POS2", "Required_POS3",
+        "Required_BEYOND", "Total_Required_Less_FIE", "Total_Required_Selected_Confidence",
+        "Value_FIE", "Value_POS1", "Value_POS2", "Value_POS3", "Value_BEYOND",
+        "Total_Value_Less_FIE", "Total_Value_Selected_Confidence", "IND STON", "IND SQFT",
+        "DIM LENGTH INCHES", "DIM WIDTH INCHES", "DIM HEIGHT INCHES"
+    ]
+
+    # Define data types for reading the CSV
+    schema = {
+        'AssessmentNumber': 'str',
+        'Class_of_Supply': 'str',
+        'Region': 'str',
+        'SECREP Flag': 'bool',
+        'Battery Flag': 'bool',
+        'MEF': 'str',
+        'FIE': 'str',
+        'Location Name': 'str',
+        'TAMCN_NIIN': 'str',
+        'TAMCN_of_End_Item': 'str',
+        'NIIN_of_End_Item': 'str',
+        'COLLOQUIAL_NAME': 'str',
+        'FSC of Part Required': 'str',
+        'NIIN of Part Required': 'str',
+        'Nomenclature of Part Required': 'str',
+        'UNIT_OF_ISSUE': 'str',
+        'STANDARD UNIT PRICE': 'float64',
+        'Required_FIE': 'int64',
+        'Required_POS1': 'int64',
+        'Required_POS2': 'int64',
+        'Required_POS3': 'int64',
+        'Required_BEYOND': 'int64',
+        'Total_Required_Less_FIE': 'float64',
+        'Total_Required_Selected_Confidence': 'float64',
+        'Value_FIE': 'float64',
+        'Value_POS1': 'float64',
+        'Value_POS2': 'float64',
+        'Value_POS3': 'float64',
+        'Value_BEYOND': 'float64',
+        'Total_Value_Less_FIE': 'float64',
+        'Total_Value_Selected_Confidence': 'float64',
+        'IND STON': 'float64',
+        'IND SQFT': 'float64',
+        'DIM LENGTH INCHES': 'float64',
+        'DIM WIDTH INCHES': 'float64',
+        'DIM HEIGHT INCHES': 'float64'
+    }
+
+    df1 = read_s3_csv(s3_client, source_bucket, input_file_path, dtype=schema, usecols=columns_to_keep)
+
+    # Rename columns using a dictionary
+    rename_dict1 = {
+        'Location Name': 'Location_Name',
+        'COLLOQUIAL_NAME': 'Colloquial Name',
+        'UNIT_OF_ISSUE': 'UI',
+        'STANDARD UNIT PRICE': 'Unit_Price'
+    }
+    df1.rename(columns=rename_dict1, inplace=True)
+
+    # Process SECREP and Battery Flags to boolean
+    df1['SECREP Flag'] = df1['SECREP Flag'].astype(str).str.upper().map({'TRUE': True, 'FALSE': False})
+    df1['Battery Flag'] = df1['Battery Flag'].astype(str).str.upper().map({'TRUE': True, 'FALSE': False})
+
+    # Update Class_of_Supply based on Battery Flag and SECREP Flag conditions
+    df1['Class_of_Supply'] = np.where(
+        df1['Battery Flag'] == True, 'IX C (B)',
+        np.where(df1['SECREP Flag'] == True, 'IX C (S)', 'IX C')
+    )
+
+    df1.drop(columns=['SECREP Flag', 'Battery Flag'], inplace=True)
+
+    # Reading the file from /tmp directory using pandas
+    try:
+        df2 = pd.read_csv(destination_path)
+    except FileNotFoundError:
+        return {
+            'statusCode': 404,
+            'body': json.dumps('File not found.')
+        }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'body': json.dumps(f'An error occurred: {str(e)}')
+        }
+
+    # Join the DataFrames on NIIN
+    df = pd.merge(df1, df2, on=['NIIN_of_End_Item'], suffixes=('_left', '_right'))
+
+    # Melt the DataFrame to long format for *_POS* and *_BEYOND columns
+    pos_columns = [col for col in df.columns if "_POS" in col or "_BEYOND" in col]
+    df_long = df.melt(
+        id_vars=[col for col in df.columns if col not in pos_columns],
+        value_vars=pos_columns,
+        var_name="variable",
+        value_name="Requirement"
+    )
+
+    # Extract base and POS indicator from `variable`
+    df_long[['base', 'POS']] = df_long['variable'].str.extract(r"(.+?)_(POS[0-9]+|BEYOND)")
+    df_long.drop(columns=['variable'], inplace=True)
+
+    # Replace 0.00 with 0.01 in df_long['DSS_CUBE']
+    df_long['DSS_CUBE'] = np.where(df_long['DSS_CUBE'] == 0.00, 0.01, df_long['DSS_CUBE'])
+
+    # Calculate CUFT (cubic feet) directly in df_long for each POS level
+    df_long['CUFT'] = np.where(
+        (df_long['DIM LENGTH INCHES'] == 9999) | (df_long['DIM LENGTH INCHES'] == 0) |
+        (df_long['DIM WIDTH INCHES'] == 9999) | (df_long['DIM WIDTH INCHES'] == 0) |
+        (df_long['DIM HEIGHT INCHES'] == 9999) | (df_long['DIM HEIGHT INCHES'] == 0),
+        df_long['DSS_CUBE'],
+        np.maximum(
+            (df_long['DIM LENGTH INCHES'] / 12) *
+            (df_long['DIM WIDTH INCHES'] / 12) *
+            (df_long['DIM HEIGHT INCHES'] / 12),
+            df_long['DSS_CUBE']
+        )
+    )
+
+    # Calculate SQFT (square feet) directly in df_long for each POS level
+    df_long['SQFT'] = np.where(
+        (df_long['DIM LENGTH INCHES'] == 9999) | (df_long['DIM LENGTH INCHES'] == 0) |
+        (df_long['DIM WIDTH INCHES'] == 9999) | (df_long['DIM WIDTH INCHES'] == 0),
+        0,
+        (df_long['DIM LENGTH INCHES'] / 12) * (df_long['DIM WIDTH INCHES'] / 12)
+    )
+
+    df_long['Weight_lbs'] = df_long['DSS_WEIGHT'] * df_long['Requirement']
+
+    # Perform FIE-specific calculations for each POS level
+    df_long['FIE_CUFT'] = df_long['CUFT'] * df_long['Required_FIE'] 
+    df_long['FIE_SQFT'] = df_long['SQFT'] * df_long['Required_FIE']
+    df_long['FIE_Weight_lbs'] = df_long['DSS_WEIGHT'] * df_long['Required_FIE']
+
+    rename_dict2 = {
+        'TAMCN_of_End_Item_left': 'TAMCN_of_End_Item',
+        'Colloquial_Name_left': 'Colloquial_Name',
+        'Total_Value_Less_FIE':'Total_Cost_Less_FIE',
+        'Total_Value_Selected_Confidence': 'Total_Cost',
+        'base': 'Feature',
+        'Unit_Price_left': 'Unit_Price'
+    }
+    df_long.rename(columns=rename_dict2, inplace=True)
+
+    # Select and order columns in df_long
+    df_final = df_long[['Class_of_Supply', 'Region', 'MEF', 'FIE', 'Location_Name',
+                        'TAMCN_NIIN', 'TAMCN_of_End_Item', 'NIIN_of_End_Item',
+                        'Colloquial_Name', 'TAMCN_NIIN_QTY_FIE', 'FSC of Part Required',
+                        'NIIN', 'Nomenclature', 'UI', 'Unit_Price',
+                        'DIM LENGTH INCHES', 'DIM WIDTH INCHES', 'DIM HEIGHT INCHES',
+                        'DSS_WEIGHT', 'DSS_CUBE', 'Feature',
+                        'Required_FIE', 'FIE_CUFT', 'FIE_SQFT', 'FIE_Weight_lbs', 'Cost_FIE',
+                        'POS', 'Requirement', 'CUFT', 'SQFT', 'Weight_lbs', 'Total_Cost_Less_FIE', 'Total_Cost']]
+
+    # Convert DataFrame to CSV and upload to S3
+    csv_buffer = StringIO()
+    df_final.to_csv(csv_buffer, index=False)
+    s3_client.put_object(Bucket=target_bucket, Key=output_file_path, Body=csv_buffer.getvalue())
+    logger.info("Class IX Embark CSV file has been uploaded to S3.")
+
+    return {
+        'statusCode': 200,
+        'body': 'Processing complete',
+        's3_file_path': f's3://{target_bucket}/{output_file_path}'
+    }
+    
+
+def lambda_handler(event, context):
+    logger.info("COS IX Embark transformation started")
+    # Log the received event
+    logger.info(f"Received event: {json.dumps(event)}")
+
+    target_bucket = 'wrsa-dev.canallc.com'
+    source_bucket = 'wrsa-dev.canallc.com'
+    s3_key = event['s3_key']
+    file_id = event['file_id']
+    file_name = event['file_name']
+    assessment_id = event['assessment_id']
+
+    result = cosix_embark(s3_client, source_bucket, s3_key, assessment_id, target_bucket)
+
+    logger.info("COS IX Embark File Processed")
+    return result
+
+```
+
+```{python}
+
+import pandas as pd
+import boto3
+import numpy as np
+from io import StringIO
+import logging
+import json
+import shutil
+
+
+s3_client = boto3.client('s3')
+
+# Specify the bucket name and assessment ID
+source_bucket = r.assessment_bucket
+assessment_id = r.assessment_id
+target_bucket = source_bucket
+s3_key = "assessments/template/cos-calculators/cosix_embark.csv"
+
+# Call the function
+cosix_embark(s3_client, source_bucket, s3_key, assessment_id, target_bucket)
+
+```
+
+```{bash}
+
+assessment_id='20200215714'
+
+aws s3 cp s3://wrsa-dev.canallc.com/assessments/$assessment_id/POS.csv C:/Projects/quicksight-dashboard-automation/setup/datasets/embark/embark_test/POS.csv --profile quicksight
+
+aws s3 cp s3://wrsa-dev.canallc.com/assessments/$assessment_id/ C:/Projects/quicksight-dashboard-automation/setup/datasets/embark/embark_test/ --profile quicksight --recursive --exclude "*" --include "*_embark*.csv"
+
+
+aws s3 cp s3://wrsa-dev.canallc.com/assessments/$assessment_id/ C:/Projects/quicksight-dashboard-automation/setup/datasets/embark/embark_test/ --profile quicksight --recursive --exclude "*" --include "*_joined*.csv"
+
+
+```
+
+
+```{r}
+
+library(aws.s3)
+
+bucket <- "wrsa-dev.canallc.com"
+path <- "assessments/20200215667/cosix_embark.csv"
+profile_name <- "cana"  
+
+embark_cosix <- s3read_using(
+  FUN = read.csv,
+  object = path,
+  bucket = bucket,
+  opts = list(profile = profile_name)
+)
+
+embark_cosix
+
+
+```
+
+```{bash eval=FALSE}
+
+aws s3 sync s3://wrsa-dev.canallc.com/assessments/$assessment_id/ embark_cos_processed --profile cana --exclude "*" --include "*embark*.csv"
+
+```
+
+### Aggregated Embark Summary
+
+-   embark_agg.py
+
+```{python}
+
+import boto3
+import pandas as pd
+import os
+
+def upload_file_s3(local_path, bucket_name, bucket_path, file_name):
+    """Upload and overwrite a specific file to an S3 bucket using boto3."""
+    try:
+        s3_client = boto3.client('s3')
+        full_local_path = f"{local_path}/{file_name}"
+        full_bucket_path = f"{bucket_path}{file_name}"
+        
+        # Get the size of the file
+        file_size = os.path.getsize(full_local_path)
+        print(f"Uploading {file_name} of size {file_size} bytes")
+        
+        # Upload the file to S3
+        s3_client.upload_file(full_local_path, bucket_name, full_bucket_path)
+        
+        print("Upload successful for:", file_name)
+    except Exception as e:
+        print("Error during upload:", e)
+
+def get_agg_embark(s3_client, bucket_name, assessment_id):
+    """Main function to check availability/join for all processed embark files."""
+    base_path = f'assessments/{assessment_id}/cos-calculators/'
+    files_to_check = {
+        'cosi_embark.csv': 'Class_I_Subsistence',
+        'cosi_water_embark.csv': 'Class_I_Water',
+        'cosii_vii_embark.csv': 'Class_II/VII',
+        'cosiiip_embark.csv': 'Class_IIIP',
+        'cosiv_embark.csv': 'Class_IV',
+        'cosvi_embark.csv': 'Class_VI',
+        'cosix_embark.csv': 'Class_IX'
+    }
+    
+    aggregated_df = pd.DataFrame()
+
+    # Process each file and append to the aggregated DataFrame
+    for file_name, class_of_supply in files_to_check.items():
+        try:
+            obj = s3_client.get_object(Bucket=bucket_name, Key=f"{base_path}{file_name}")
+            df = pd.read_csv(obj['Body'])
+
+            # Normalize column names: strip spaces, convert to uppercase
+            df.columns = df.columns.str.strip()
+            df.columns = df.columns.str.upper()  
+
+            print(f"Columns in {file_name}: {df.columns.tolist()}")  # Debugging output
+
+            if not df.empty:
+                df['CLASS_OF_SUPPLY'] = class_of_supply  
+                
+                # Check for required columns and handle if missing
+                df_selected = df[['CLASS_OF_SUPPLY', 'REGION', 'LOCATION_NAME', 'POS', 'CUFT', 'SQFT', 'TEUS', 'WEIGHT_LBS', 'TOTAL_COST]]
+                df_selected = df_selected.reset_index(drop=True)
+                
+                aggregated_df = pd.concat([aggregated_df, df_selected], ignore_index=True)
+        except Exception as e:
+            print(f"Error processing file {file_name}:", e)
+    
+    # Fill all NAs with zeros
+    aggregated_df = aggregated_df.fillna(0)
+
+    # Save the aggregated DataFrame to CSV in the /tmp directory
+    local_path = '/tmp'
+    aggregated_file_name = 'aggregated_embark.csv'
+    aggregated_file_path = f"{local_path}/{aggregated_file_name}"
+    aggregated_df.to_csv(aggregated_file_path, index=False)
+
+    # Upload the aggregated file to S3
+    upload_file_s3(local_path, bucket_name, base_path, aggregated_file_name)
+
+
+
+```

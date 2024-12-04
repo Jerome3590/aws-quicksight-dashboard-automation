@@ -1,0 +1,561 @@
+{
+    "Status": 200,
+    "DataSet": {
+        "Arn": "arn:aws:quicksight:us-east-1:548995328310:dataset/AssessmentTable-dataset-template",
+        "DataSetId": "AssessmentTable-dataset-template",
+        "Name": "AssessmentTable_dataset_template",
+        "CreatedTime": "2024-08-04T00:38:27.278000-04:00",
+        "LastUpdatedTime": "2024-08-04T00:38:41.098000-04:00",
+        "PhysicalTableMap": {
+            "AssessmentTable-physicalTable": {
+                "S3Source": {
+                    "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/AssessmentTable-datasource-template",
+                    "UploadSettings": {
+                        "Format": "CSV",
+                        "StartFromRow": 1,
+                        "ContainsHeader": true,
+                        "TextQualifier": "DOUBLE_QUOTE",
+                        "Delimiter": ","
+                    },
+                    "InputColumns": [
+                        {
+                            "Name": "ID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "AssessmentNumber",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "AppianFolderID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "AssessmentTypeID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Description",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "OperationDuration",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "OperationStartDate",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "OperationEndDate",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "MarforOrganizationID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "SupportedCCMDID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "PrepoEquipDayRange",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "GenerateJFRG",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "S3FolderLink",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "StatusID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "StepID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Title",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Year",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UseMpf",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UseMcppn",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UseLform",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DefaultTheaterStartDay",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "SourcingStepID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "RiskStepID",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "SourcingAnalysisStartDate",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "SourcingAnalysisEndDate",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CreatedBy",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CreatedOn",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UpdatedBy",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UpdatedOn",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "IsArchived",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "LeadMarforUIC",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "LeadMarforName",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DefaultUnitFactor",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "ProjectCode",
+                            "Type": "STRING"
+                        }
+                    ]
+                }
+            }
+        },
+        "LogicalTableMap": {
+            "AssessmentTable-logicalTable": {
+                "Alias": "AssessmentTable_template",
+                "DataTransforms": [
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ID",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "AssessmentNumber",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "AppianFolderID",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "AssessmentTypeID",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Description",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "OperationDuration",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "OperationStartDate",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "OperationEndDate",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "MarforOrganizationID",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "SupportedCCMDID",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "PrepoEquipDayRange",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "GenerateJFRG",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "S3FolderLink",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "StatusID",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "StepID",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Title",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Year",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UseMpf",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UseMcppn",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UseLform",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DefaultTheaterStartDay",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "SourcingStepID",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "RiskStepID",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "SourcingAnalysisStartDate",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "SourcingAnalysisEndDate",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "CreatedBy",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "CreatedOn",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UpdatedBy",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UpdatedOn",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "IsArchived",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "LeadMarforUIC",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "LeadMarforName",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DefaultUnitFactor",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ProjectCode",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "ProjectOperation": {
+                            "ProjectedColumns": [
+                                "ID",
+                                "AssessmentNumber",
+                                "AppianFolderID",
+                                "AssessmentTypeID",
+                                "Description",
+                                "OperationDuration",
+                                "OperationStartDate",
+                                "OperationEndDate",
+                                "MarforOrganizationID",
+                                "SupportedCCMDID",
+                                "PrepoEquipDayRange",
+                                "GenerateJFRG",
+                                "S3FolderLink",
+                                "StatusID",
+                                "StepID",
+                                "Title",
+                                "Year",
+                                "UseMpf",
+                                "UseMcppn",
+                                "UseLform",
+                                "DefaultTheaterStartDay",
+                                "SourcingStepID",
+                                "RiskStepID",
+                                "SourcingAnalysisStartDate",
+                                "SourcingAnalysisEndDate",
+                                "CreatedBy",
+                                "CreatedOn",
+                                "UpdatedBy",
+                                "UpdatedOn",
+                                "IsArchived",
+                                "LeadMarforUIC",
+                                "LeadMarforName",
+                                "DefaultUnitFactor",
+                                "ProjectCode"
+                            ]
+                        }
+                    }
+                ],
+                "Source": {
+                    "PhysicalTableId": "AssessmentTable-physicalTable"
+                }
+            }
+        },
+        "OutputColumns": [
+            {
+                "Name": "ID",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "AssessmentNumber",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "AppianFolderID",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "AssessmentTypeID",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Description",
+                "Type": "STRING"
+            },
+            {
+                "Name": "OperationDuration",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "OperationStartDate",
+                "Type": "STRING"
+            },
+            {
+                "Name": "OperationEndDate",
+                "Type": "STRING"
+            },
+            {
+                "Name": "MarforOrganizationID",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "SupportedCCMDID",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "PrepoEquipDayRange",
+                "Type": "STRING"
+            },
+            {
+                "Name": "GenerateJFRG",
+                "Type": "STRING"
+            },
+            {
+                "Name": "S3FolderLink",
+                "Type": "STRING"
+            },
+            {
+                "Name": "StatusID",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "StepID",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Title",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Year",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "UseMpf",
+                "Type": "STRING"
+            },
+            {
+                "Name": "UseMcppn",
+                "Type": "STRING"
+            },
+            {
+                "Name": "UseLform",
+                "Type": "STRING"
+            },
+            {
+                "Name": "DefaultTheaterStartDay",
+                "Type": "STRING"
+            },
+            {
+                "Name": "SourcingStepID",
+                "Type": "STRING"
+            },
+            {
+                "Name": "RiskStepID",
+                "Type": "STRING"
+            },
+            {
+                "Name": "SourcingAnalysisStartDate",
+                "Type": "STRING"
+            },
+            {
+                "Name": "SourcingAnalysisEndDate",
+                "Type": "STRING"
+            },
+            {
+                "Name": "CreatedBy",
+                "Type": "STRING"
+            },
+            {
+                "Name": "CreatedOn",
+                "Type": "STRING"
+            },
+            {
+                "Name": "UpdatedBy",
+                "Type": "STRING"
+            },
+            {
+                "Name": "UpdatedOn",
+                "Type": "STRING"
+            },
+            {
+                "Name": "IsArchived",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "LeadMarforUIC",
+                "Type": "STRING"
+            },
+            {
+                "Name": "LeadMarforName",
+                "Type": "STRING"
+            },
+            {
+                "Name": "DefaultUnitFactor",
+                "Type": "STRING"
+            },
+            {
+                "Name": "ProjectCode",
+                "Type": "STRING"
+            }
+        ],
+        "ImportMode": "SPICE",
+        "ConsumedSpiceCapacityInBytes": 957,
+        "DataSetUsageConfiguration": {
+            "DisableUseAsDirectQuerySource": false,
+            "DisableUseAsImportedSource": false
+        }
+    },
+    "RequestId": "7f4ca3f2-85a9-430d-9d67-47d1cec813d6"
+}

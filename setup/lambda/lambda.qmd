@@ -1,0 +1,708 @@
+---
+title: "AWS Lambda Builds"
+author: "Jerome Dixon"
+execute: 
+  eval: false
+format: 
+  html: 
+    link-external-icon: true
+    link-external-newwindow: true
+    toc: true
+    toc-depth: 5
+    code-fold: true
+    code-summary: "Show the code"
+    embed-resources: true
+    default-image-extension: svg
+    dpi: 600
+    theme: superhero
+---
+
+### Environment
+
+```{r libraries}
+
+library(aws.s3)
+library(dplyr)
+library(readr)
+library(DT)
+library(purrr)
+library(tidyr)
+library(jsonlite)
+library(here)
+
+
+Sys.setenv(aws_profile = "quicksight")
+Sys.setenv(source_bucket = "assessments-imat")
+Sys.setenv(wrsa_bucket = "{bucket_name}")
+Sys.setenv(bucket_manifests = "assessments-manifests")
+Sys.setenv(target_bucket = "assessments-embark-joins")
+Sys.setenv(imat_account_id = "xxxxxxxxxxxx")
+Sys.setenv(aws_region = "us-east-1")
+Sys.setenv(owner_arn="arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:user/default/quicksight")
+
+```
+
+- Test Assessment Bucket (WRSA.DEV)
+
+```{bash eval=FALSE}
+
+#cd ../../testing/test_assessment_10910
+
+#aws s3 sync "s3://$wrsa_bucket/assessments/10910" . --profile cana
+
+```
+
+```{bash eval=FALSE}
+
+aws lambda list-functions --profile cana --query 'Functions[?starts_with(FunctionName, `imat`) == `true`].FunctionName' --output text
+
+
+```
+
+```{bash eval=FALSE}
+
+aws lambda list-functions --profile quicksight --query 'Functions[?starts_with(FunctionName, `sqs`) == `true`].FunctionName' --output text
+
+```
+
+```{bash eval=FALSE}
+
+aws lambda list-functions --profile quicksight --query 'Functions[?starts_with(FunctionName, `step-`) == `true`].FunctionName' --output text
+
+```
+
+```{bash}
+
+aws lambda list-functions --profile quicksight --query 'Functions[?starts_with(FunctionName, `ddb`) == `true`].FunctionName' --output text
+
+```
+
+
+```{bash}
+
+docker --version
+
+```
+
+- Using AWS Elastic Container Registry (ECR) for AWS Lambda image builds
+
+Before executing below: Create Repos in AWS ECR (i.e. quicksight-preprocessor)
+Get repo info after setup
+
+### ECR Repo
+
+```{bash eval=FALSE}
+
+aws ecr create-repository --repository-name ddb-agg-ingest --profile quicksight
+
+```
+
+![ECR Repo](../../README/ecr_repo.png)
+
+- Set Up Lambda Cross Account Access
+- Set Up S3 Cross Account Access for Manifest Bucket
+
+Before executing below: Create Repos in AWS ECR (i.e. quicksight-preprocessor)
+Get repo info after setup
+
+![ECR Repo](../../README/ecr_repo2.png)
+
+
+### Lambda Functions (Create/Update)
+
+#### S3 Cross Account IMAT Pre-Processor (Lambda #1)
+
+```{bash eval=FALSE}
+
+aws ecr get-login-password --region us-east-1 --profile cana | docker login --username AWS --password-stdin xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com 
+
+```
+
+```{bash eval=FALSE}
+
+docker build -t imat-preprocessor2 -f Dockerfile.s3_imat_preprocessor .
+
+```
+
+```{bash eval=FALSE}
+
+docker tag imat-preprocessor2:latest xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/imat-preprocessor2:latest
+
+```
+
+```{bash eval=FALSE}
+
+docker push xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/imat-preprocessor2:latest
+
+```
+
+```{bash eval=FALSE}
+
+aws lambda update-function-code \
+    --function-name imat-message-router2 \
+    --image-uri xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/imat-preprocessor2:latest \
+    --publish \
+    --profile cana
+
+```
+
+#### SQS Processor (Lambda #2)
+
+```{bash eval=FALSE}
+
+aws ecr get-login-password --region us-east-1 --profile quicksight | docker login --username AWS --password-stdin xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com 
+
+```
+
+```{bash}
+
+docker build -t sqs-processor -f Dockerfile.sqs_processor .
+
+```
+
+```{bash}
+
+docker tag sqs-processor:latest xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/sqs-processor:latest
+
+```
+
+```{bash}
+
+docker push xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/sqs-processor:latest
+
+```
+
+```{bash}
+
+aws lambda update-function-code \
+    --function-name sqs-processor \
+    --image-uri xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/sqs-processor:latest \
+    --publish \
+    --profile quicksight
+    
+```
+
+#### DynamoDB Stream for Aggregated Embark File Ingest (Lambda #3)
+
+```{bash eval=FALSE}
+
+aws ecr get-login-password --region us-east-1 --profile quicksight | docker login --username AWS --password-stdin xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com
+
+```
+
+```{bash}
+
+docker build -t ddb-agg-ingest -f Dockerfile.ddb_agg_ingest .
+
+```
+
+```{bash}
+
+docker tag ddb-agg-ingest:latest xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/ddb-agg-ingest:latest
+
+```
+
+```{bash}
+
+docker push xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/ddb-agg-ingest:latest
+
+```
+
+```{bash}
+
+aws lambda update-function-code \
+    --function-name ddb-agg-ingest \
+    --image-uri xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/ddb-agg-ingest:latest \
+    --publish \
+    --profile quicksight
+
+```
+
+#### DynamoDB Stream for Dashboard (Lambda #4)
+
+
+```{bash eval=FALSE}
+
+aws ecr get-login-password --region us-east-1 --profile quicksight | docker login --username AWS --password-stdin xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com 
+
+```
+
+```{bash}
+
+docker build -t ddb-dashboard-processor -f Dockerfile.ddb_dashboard_processor .
+
+```
+
+```{bash}
+
+docker tag ddb-dashboard-processor:latest xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/ddb-dashboard-processor:latest
+
+```
+
+```{bash}
+
+docker push xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/ddb-dashboard-processor:latest
+
+```
+
+```{bash}
+
+aws lambda update-function-code \
+    --function-name ddb-dashboard-processor \
+    --image-uri xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/ddb-dashboard-processor:latest \
+    --publish \
+    --profile quicksight
+
+```
+
+### Step Functions - Lambda for Each Step Function
+
+- Process Embark and Join Files in parallel
+
+```{bash eval=FALSE}
+
+aws ecr get-login-password --region us-east-1 --profile quicksight | docker login --username AWS --password-stdin xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com 
+
+```
+
+#### POS (#5)
+
+```{bash}
+
+docker build -t step-pos -f Dockerfile.step_pos .
+
+```
+
+```{bash}
+
+docker tag step-pos:latest xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-pos:latest
+
+```
+
+```{bash}
+
+docker push xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-pos:latest
+
+```
+
+```{bash}
+
+aws lambda update-function-code \
+    --function-name step-pos \
+    --image-uri xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-pos:latest \
+    --publish \
+    --profile quicksight
+
+```
+
+#### Force Flow (#6)
+
+```{bash}
+
+docker build -t step-force-flow -f Dockerfile.step_force_flow .
+
+```
+
+```{bash}
+
+docker tag step-force-flow:latest xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-force-flow:latest
+
+```
+
+```{bash}
+
+docker push xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-force-flow:latest
+
+```
+
+```{bash}
+
+aws lambda update-function-code \
+    --function-name step-force-flow \
+    --image-uri xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-force-flow:latest \
+    --publish \
+    --profile quicksight
+
+```
+
+#### COS I (#7)
+
+```{bash}
+
+docker build -t step-cosi -f Dockerfile.step_cosi .
+
+```
+
+```{bash}
+
+docker tag step-cosi:latest xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosi:latest
+
+```
+
+```{bash}
+
+docker push xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosi:latest
+
+```
+
+```{bash}
+
+aws lambda update-function-code \
+    --function-name step-cosi \
+    --image-uri xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosi:latest \
+    --publish \
+    --profile quicksight
+
+```
+
+#### COS I Water (#8)
+
+```{bash}
+
+docker build -t step-cosi_water -f Dockerfile.step_cosi_water .
+
+```
+
+```{bash}
+
+docker tag step-cosi_water:latest xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosi_water:latest
+
+```
+
+```{bash}
+
+docker push xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosi_water:latest
+
+```
+
+```{bash}
+
+aws lambda update-function-code \
+    --function-name step-cosi-water \
+    --image-uri xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosi_water:latest \
+    --publish \
+    --profile quicksight
+
+```
+
+#### COS II VII (#9)
+
+```{bash}
+
+docker build -t step-cosii_vii -f Dockerfile.step_cosii_vii .
+
+```
+
+```{bash}
+
+docker tag step-cosii_vii:latest xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosii_vii:latest
+
+```
+
+```{bash}
+
+docker push xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosii_vii:latest
+
+```
+
+```{bash}
+
+aws lambda update-function-code \
+    --function-name step-cosii-vii \
+    --image-uri xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosii_vii:latest \
+    --publish \
+    --profile quicksight
+
+```
+
+#### COS IIIP (#10)
+
+```{bash}
+
+docker build -t step-cosiiip -f Dockerfile.step_cosiiip .
+
+```
+
+```{bash}
+
+docker tag step-cosiiip:latest xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosiiip:latest
+
+```
+
+```{bash}
+
+docker push xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosiiip:latest
+
+```
+
+```{bash}
+
+aws lambda update-function-code \
+    --function-name step-cosiiip \
+    --image-uri xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosiiip:latest \
+    --publish \
+    --profile quicksight
+
+```
+
+#### COS IV (#11)
+
+```{bash}
+
+docker build -t step-cosiv -f Dockerfile.step_cosiv .
+
+```
+
+```{bash}
+
+docker tag step-cosiv:latest xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosiv:latest
+
+```
+
+```{bash}
+
+docker push xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosiv:latest
+
+```
+
+```{bash}
+
+aws lambda update-function-code \
+    --function-name step-cosiv \
+    --image-uri xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosiv:latest \
+    --publish \
+    --profile quicksight
+
+```
+
+#### COS VI (#12)
+
+```{bash}
+
+docker build -t step-cosvi -f Dockerfile.step_cosvi .
+
+```
+
+```{bash}
+
+docker tag step-cosvi:latest xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosvi:latest
+
+```
+
+```{bash}
+
+docker push xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosvi:latest
+
+```
+
+```{bash}
+
+aws lambda update-function-code \
+    --function-name step-cosvi \
+    --image-uri xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosvi:latest \
+    --publish \
+    --profile quicksight
+
+```
+
+#### COS IX (#13)
+
+```{bash}
+
+docker build -t step-cosix -f Dockerfile.step_cosix .
+
+```
+
+```{bash}
+
+docker tag step-cosix:latest xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosix:latest
+
+```
+
+```{bash}
+
+docker push xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosix:latest
+
+```
+
+```{bash}
+
+aws lambda update-function-code \
+    --function-name step-cosix \
+    --image-uri xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-cosix:latest \
+    --publish \
+    --profile quicksight
+
+```
+
+#### Aggregated Embark (#14)
+
+```{bash eval=FALSE}
+
+aws ecr get-login-password --region us-east-1 --profile quicksight | docker login --username AWS --password-stdin xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com
+
+```
+
+```{bash}
+
+docker build -t step-embark-agg -f Dockerfile.step_embark_agg .
+
+```
+
+```{bash}
+
+docker tag step-embark-agg:latest xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-embark-agg:latest
+
+```
+
+```{bash}
+
+docker push xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-embark-agg:latest
+
+```
+
+```{bash}
+
+aws lambda update-function-code \
+    --function-name step-embark-agg \
+    --image-uri xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-embark-agg:latest \
+    --publish \
+    --profile quicksight
+
+```
+
+#### Dataset Sync Status (#15)
+
+```{bash eval=FALSE}
+
+aws ecr get-login-password --region us-east-1 --profile quicksight | docker login --username AWS --password-stdin xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com
+
+```
+
+```{bash}
+
+docker build -t step-reprocess -f Dockerfile.step_reprocess .
+
+```
+
+```{bash}
+
+docker tag step-reprocess:latest xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-reprocess:latest
+
+```
+
+```{bash}
+
+docker push xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-reprocess:latest
+
+```
+
+```{bash}
+
+aws lambda update-function-code \
+    --function-name step-reprocess \
+    --image-uri xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/step-reprocess:latest \
+    --publish \
+    --profile quicksight
+
+```
+
+### Test With Most Recent Assessment ID
+
+```{bash most-recent-assessment}
+#| eval: true
+
+folder_list=$(aws s3 ls "s3://$wrsa_bucket/assessments/" --profile cana | awk '/\/$/ {sub("/",""); print $NF}')
+
+# Convert to numeric list and find max value
+max_value=0
+for i in $folder_list; do
+    # Check if the folder name is a valid integer
+    if [[ $i =~ ^[0-9]+$ ]]; then
+        if [ "$i" -gt "$max_value" ]; then
+            max_value=$i
+        fi
+    else
+        echo "Skipping non-integer folder: $i"
+    fi
+done
+
+# Save max value to environment variable 'assessment_id'
+export test_id=$((max_value + 1))
+
+# Print for confirmation
+echo "Highest Assessment ID is: $max_value"
+echo "Next Assessment ID is: $test_id"
+echo "Environment variable test_id set to: $test_id"
+
+# Save the document to a file
+echo "$test_id" > test_id.txt
+
+# Change to test assessment directory
+cd ../../testing/10926C
+
+ls
+
+
+```
+
+#### Upload Sample Assessment to Latest Bucket for Testing
+
+- Upload assessment
+
+```{bash}
+
+if [ -f test_id.txt ]; then
+    test_id=$(cat test_id.txt)
+else
+    echo "test_id.txt not found"
+    exit 1
+fi
+
+cd ../../testing/10926C
+
+# Copy the directory to S3
+aws s3 cp . "s3://$wrsa_bucket/assessments/$test_id" --recursive --profile cana
+
+```
+
+### Dashboard Troubleshooting
+
+```{bash}
+
+if [ -f test_id.txt ]; then
+    test_id=$(cat test_id.txt)
+else
+    echo "test_id.txt not found"
+    exit 1
+fi
+
+aws quicksight describe-dashboard --aws-account-id xxxxxxxxxxxx --dashboard-id RD-Assessment-$test_id > dashboard_errors.json
+
+```
+
+### Get URL
+
+```{bash}
+
+if [ -f test_id.txt ]; then
+    test_id=$(cat test_id.txt)
+else
+    echo "test_id.txt not found"
+    exit 1
+fi
+
+dashboard_id="RD-Assessment-$test_id"
+
+aws quicksight get-dashboard-embed-url --aws-account-id $imat_account_id --dashboard-id $dashboard_id --identity-type ANONYMOUS --namespace default --session-lifetime 600 --profile quicksight --query 'EmbedUrl' --output text > url.txt
+
+```
+
+```{r}
+
+url <- read_lines('url.txt')
+
+browseURL(url)
+
+```
+

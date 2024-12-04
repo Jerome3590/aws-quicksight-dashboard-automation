@@ -1,0 +1,93 @@
+---
+title: "Sample Keras Model"
+format: html
+editor: visual
+---
+
+```{r}
+
+library(keras3)
+
+inputs <- keras_input(shape = 784, name="digits")
+outputs <- inputs |>
+  layer_dense(units = 64, activation = "relu", name = "dense_1") |>
+  layer_dense(units = 64, activation = "relu", name = "dense_2") |>
+  layer_dense(units = 10, activation = "softmax", name = "predictions")
+model2 <- keras_model(inputs = inputs, outputs = outputs)
+summary(model2)
+
+```
+
+```{r}
+
+c(c(x_train, y_train), c(x_test, y_test)) %<-% dataset_mnist()
+
+# Preprocess the data (these are NumPy arrays)
+x_train <- array_reshape(x_train, c(60000, 784)) / 255
+x_test <- array_reshape(x_test, c(10000, 784)) / 255
+
+# Reserve 10,000 samples for validation
+x_val <- x_train[1:10000,]
+y_val <- y_train[1:10000]
+x_train <- x_train[-c(1:10000),]
+y_train <- y_train[-c(1:10000)]
+
+```
+
+```{r}
+
+model2 |> compile(
+  # Optimizer
+  optimizer = optimizer_rmsprop(),
+  # Loss function to minimize
+  loss = loss_sparse_categorical_crossentropy(),
+  # List of metrics to monitor
+  metrics = list(metric_sparse_categorical_accuracy())
+)
+
+```
+
+```{r}
+
+history2 <- model2 |> fit(
+  x_train, y_train,
+  batch_size = 64,
+  epochs = 2,
+  validation_data = list(x_val, y_val)
+)
+```
+
+```{r}
+plot(model2)
+```
+
+```{r}
+
+history2
+
+```
+
+```{r}
+
+# Evaluate the model on the test data using `evaluate`
+results <- model2 |> evaluate(x_test, y_test, batch_size=128)
+
+```
+
+```{r}
+
+str(results)
+
+```
+
+```{r}
+predictions <- model2 |> predict(x_test[1:2,])
+```
+
+```{r}
+dim(predictions)
+```
+
+```{r}
+max.col(probs) - 1L
+```

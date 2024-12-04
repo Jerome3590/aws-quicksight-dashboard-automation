@@ -1,0 +1,203 @@
+{
+  "RD-IIIP-POL-Pkg-NSN-Requirements-PBI-logicalTable": {
+    "Alias": "RD_IIIP_POL_Pkg_NSN_Requirements_PBI_template",
+    "DataTransforms": [
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "AssessmentNumber",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Class_of_Supply",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "TAMCN",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "NSN",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "POS",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "MEF",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "LOCATION_NAME",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "REGION",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "POL_Type",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "POL_Pkg_Type",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Qty",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "POL_PKG_NSN",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "NIIN",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "NOMENCLATURE",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "STANDARD.UNIT.PRICE",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "STORES_ACCOUNT_CODE",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CEC",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "SOS",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DIM.LENGTH.INCHES",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DIM.WIDTH.INCHES",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DIM.HEIGHT.INCHES",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "IND.STON",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "IND.SQFT_LW",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "IND.CUFT",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "IND.TEUs_Cube",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "IND.SQFT_Cube",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "ProjectOperation": {
+          "ProjectedColumns": [
+            "AssessmentNumber",
+            "Class_of_Supply",
+            "TAMCN",
+            "NSN",
+            "POS",
+            "MEF",
+            "LOCATION_NAME",
+            "REGION",
+            "POL_Type",
+            "POL_Pkg_Type",
+            "Qty",
+            "POL_PKG_NSN",
+            "NIIN",
+            "NOMENCLATURE",
+            "STANDARD.UNIT.PRICE",
+            "STORES_ACCOUNT_CODE",
+            "CEC",
+            "SOS",
+            "DIM.LENGTH.INCHES",
+            "DIM.WIDTH.INCHES",
+            "DIM.HEIGHT.INCHES",
+            "IND.STON",
+            "IND.SQFT_LW",
+            "IND.CUFT",
+            "IND.TEUs_Cube",
+            "IND.SQFT_Cube"
+          ]
+        }
+      }
+    ],
+    "Source": {
+      "PhysicalTableId": "RD-IIIP-POL-Pkg-NSN-Requirements-PBI-physicalTable"
+    }
+  }
+}

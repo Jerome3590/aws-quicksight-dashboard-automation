@@ -1,0 +1,180 @@
+{
+  "AssessmentParameterDataMapTable-physicalTable": {
+    "S3Source": {
+      "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/AssessmentParameterDataMapTable-datasource-template",
+      "UploadSettings": {
+        "Format": "CSV",
+        "StartFromRow": 1,
+        "ContainsHeader": true,
+        "TextQualifier": "DOUBLE_QUOTE",
+        "Delimiter": ","
+      },
+      "InputColumns": [
+        {
+          "Name": "ID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "AssessmentID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClimateTypeID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "TheaterTypeID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "WaterLevelID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "DaysOfSupplyFirst",
+          "Type": "STRING"
+        },
+        {
+          "Name": "DaysOfSupplySecond",
+          "Type": "STRING"
+        },
+        {
+          "Name": "DaysOfSupplyThird",
+          "Type": "STRING"
+        },
+        {
+          "Name": "OverrideTFSMS",
+          "Type": "STRING"
+        },
+        {
+          "Name": "EpwsToFeed",
+          "Type": "STRING"
+        },
+        {
+          "Name": "PercentToFemalePopulation",
+          "Type": "STRING"
+        },
+        {
+          "Name": "POS1CARFRate",
+          "Type": "STRING"
+        },
+        {
+          "Name": "POS2CARFRate",
+          "Type": "STRING"
+        },
+        {
+          "Name": "POS3CARFRate",
+          "Type": "STRING"
+        },
+        {
+          "Name": "CalculateCRRForII_ICCE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UseII_VII_CARFForII_ICCE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "PercentForCARFForEachPOSForII_ICCE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIXCStockLevelPercent",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIXCPartsHistory",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIXCInventoryToConsider",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIXExcludeTool",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIXExcludePol",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIXExcludeBattery",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIXExcludeClothing",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIXCAcqAdvJson",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIXCPhcJson",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIXSStockLevelPercent",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIXSPartsHistory",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIXSInventoryToConsider",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIXSFloatStartDay",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIXSRepairStartDay",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIIIPPOS1",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIIIPPOS2",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIIIPPOS3",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIIIPPOSBeyond",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIIIPHeavyPkg",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ClassIIIPLightPkg",
+          "Type": "STRING"
+        },
+        {
+          "Name": "CreatedBy",
+          "Type": "STRING"
+        },
+        {
+          "Name": "CreatedOn",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UpdatedBy",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UpdatedOn",
+          "Type": "STRING"
+        }
+      ]
+    }
+  }
+}

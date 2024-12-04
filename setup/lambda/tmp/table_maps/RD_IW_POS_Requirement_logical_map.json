@@ -1,0 +1,163 @@
+{
+  "RD-IW-POS-Requirement-logicalTable": {
+    "Alias": "RD_IW_POS_Requirement_template",
+    "DataTransforms": [
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "AssessmentNumber",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Class_of_Supply",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Ration_Type",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Region",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "TagColumnOperation": {
+          "ColumnName": "Region",
+          "Tags": [
+            {
+              "ColumnGeographicRole": "STATE"
+            }
+          ]
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Region_MEF_Lead",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "TagColumnOperation": {
+          "ColumnName": "Region_MEF_Lead",
+          "Tags": [
+            {
+              "ColumnGeographicRole": "STATE"
+            }
+          ]
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CAP_Name",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CAP_Names",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Location_ID",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UI_Count_DOS1",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UI_Count_DOS2",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UI_Count_DOS3",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UI_Count_BEYOND",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Total_UI_Cost_DOS1",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Total_UI_Cost_DOS2",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Total_UI_Cost_DOS3",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Total_UI_Cost_BEYOND",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Location_Name",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "ProjectOperation": {
+          "ProjectedColumns": [
+            "AssessmentNumber",
+            "Class_of_Supply",
+            "Ration_Type",
+            "Region",
+            "Region_MEF_Lead",
+            "CAP_Name",
+            "CAP_Names",
+            "Location_ID",
+            "UI_Count_DOS1",
+            "UI_Count_DOS2",
+            "UI_Count_DOS3",
+            "UI_Count_BEYOND",
+            "Total_UI_Cost_DOS1",
+            "Total_UI_Cost_DOS2",
+            "Total_UI_Cost_DOS3",
+            "Total_UI_Cost_BEYOND",
+            "Location_Name"
+          ]
+        }
+      }
+    ],
+    "Source": {
+      "PhysicalTableId": "RD-IW-POS-Requirement-physicalTable"
+    }
+  }
+}

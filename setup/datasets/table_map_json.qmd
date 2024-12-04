@@ -1,0 +1,200 @@
+---
+title: "Table Map JSON"
+author: "Jerome Dixon"
+format: 
+  html: 
+    link-external-icon: true
+    link-external-newwindow: true
+    toc: true
+    toc-depth: 5
+    code-fold: true
+    code-summary: "Show the code"
+    embed-resources: true
+    default-image-extension: svg
+    dpi: 600
+    theme: superhero
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r}
+library(jsonlite)
+library(here)
+```
+
+
+```{r}
+
+# For bash scripts
+Sys.setenv(assessment_id = "template")
+Sys.setenv(bucket_assessment = "{bucket_name}")
+Sys.setenv(wrsa_account_id = "xxxxxxxxxxxx")
+Sys.setenv(imat_account_id = "xxxxxxxxxxxx")
+Sys.setenv(owner_arn="arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:user/default/quicksight")
+Sys.setenv(imat_assessments_s3 = "{bucket_name}/assessments")
+Sys.setenv(aws_region = "us-east-1")
+
+assessment_id <- Sys.getenv("assessment_id")
+
+```
+
+
+### Create Logical Table Map Function
+
+```{r logical-table-map-function}
+
+generate_logical_table <- function(base_filename, table_logical_id, table_physical_id, input_columns) {
+  # Initialize the base structure
+  logical_table <- list()
+  logical_table[[table_logical_id]] <- list(
+    Alias = base_filename,
+    DataTransforms = list(),
+    Source = list(
+      PhysicalTableId = table_physical_id
+    )
+  )
+  
+  # Add CastColumnTypeOperation for each column
+  for (column in input_columns) {
+    column_name <- column$Name
+    new_column_type <- column$Type
+    
+    cast_operation <- list(
+      CastColumnTypeOperation = list(
+        ColumnName = column_name,
+        NewColumnType = new_column_type
+      )
+    )
+    logical_table[[table_logical_id]]$DataTransforms <- append(logical_table[[table_logical_id]]$DataTransforms, list(cast_operation))
+    
+    # Add TagColumnOperation for geographic columns
+    if (column_name == "Region" || column_name == "Region_MEF_Lead") {
+      tag_operation <- list(
+        TagColumnOperation = list(
+          ColumnName = column_name,
+          Tags = list(
+            list(ColumnGeographicRole = "STATE")
+          )
+        )
+      )
+      logical_table[[table_logical_id]]$DataTransforms <- append(logical_table[[table_logical_id]]$DataTransforms, list(tag_operation))
+    }
+  }
+  
+  # Add ProjectOperation with all columns
+  projected_columns <- lapply(input_columns, function(column) column$Name)
+  project_operation <- list(
+    ProjectOperation = list(
+      ProjectedColumns = projected_columns
+    )
+  )
+  logical_table[[table_logical_id]]$DataTransforms <- append(logical_table[[table_logical_id]]$DataTransforms, list(project_operation))
+  
+  return(toJSON(logical_table, auto_unbox = TRUE, pretty = TRUE))
+}
+
+
+```
+
+### Create Physical Table Map Function
+
+```{r}
+
+generate_physical_table <- function(table_physical_id, datasource_arn, input_columns) {
+  physical_table <- list()
+  physical_table[[table_physical_id]] <- list(
+    S3Source = list(
+      DataSourceArn = datasource_arn,
+      UploadSettings = list(
+        Format = "CSV",
+        StartFromRow = 1,
+        ContainsHeader = TRUE,
+        TextQualifier = "DOUBLE_QUOTE",
+        Delimiter = ","
+      ),
+      InputColumns = lapply(input_columns, function(column) {
+        list(Name = column$Name, Type = "STRING")
+      })
+    )
+  )
+  
+  return(toJSON(physical_table, auto_unbox = TRUE, pretty = TRUE))
+}
+
+```
+
+### Dataframe Column Types
+
+```{r}
+
+generate_input_columns_list <- function(df) {
+  columns <- names(df)
+  types <- sapply(df, class)
+  
+  input_columns_list <- lapply(seq_along(columns), function(i) {
+    list(Name = columns[i], Type = switch(types[i],
+      "numeric" = "DECIMAL",
+      "integer" = "INTEGER",
+      "double" = "DECIMAL",
+      "character" = "STRING",
+      "logical" = "STRING",
+      "factor" = "STRING",
+      "unknown" = "STRING"
+    ))
+  })
+  return(input_columns_list)
+}
+
+```
+
+### Process CSV files
+
+```{r}
+
+process_files <- function(directory_path, aws_account_id, template_nbr) {
+  files <- list.files(directory_path, pattern = "*.csv", full.names = TRUE)
+  
+  for (file_path in files) {
+    file_object <- read.csv(file_path)
+    base_filename <- tools::file_path_sans_ext(basename(file_path))
+    file_id <- gsub('_', "-", base_filename)
+    
+    input_columns <- generate_input_columns_list(file_object)
+    table_logical_id <- paste0(file_id, "-logical")
+    table_physical_id <- paste0(file_id, "-physical")
+    
+    datasource_arn <- paste0("arn:aws:quicksight:us-east-1:", aws_account_id, ":dataset/", file_id, "-datasource-", template_nbr)
+    
+    json_physical <- generate_physical_table(table_physical_id, datasource_arn, input_columns)
+    write(json_physical, file = paste0(directory_path, "/", base_filename, "_physical_map.json"))
+    
+    json_logical <- generate_logical_table(base_filename, table_logical_id, table_physical_id, input_columns)
+    write(json_logical, file = paste0(directory_path, "/", base_filename, "_logical_map.json"))
+    
+    
+  }
+}
+
+```
+
+### Load Directory
+
+```{bash}
+aws s3 cp in_process/cosvi_embark.csv s3://{bucket_name}/assessments/template/cosvi_embark.csv --profile quicksight
+```
+### Call Function
+
+```{r}
+
+# Set  directory path, AWS account ID, template number, and S3 buckets
+directory_path <- here::here("in_process")
+aws_account_id <- "xxxxxxxxxxxx"
+template_nbr <- "template"
+
+# Call the process_files function
+process_files(directory_path, aws_account_id, template_nbr)
+
+
+```
+

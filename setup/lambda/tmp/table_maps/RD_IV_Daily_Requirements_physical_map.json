@@ -1,0 +1,160 @@
+{
+  "RD-IV-Daily-Requirements-physicalTable": {
+    "S3Source": {
+      "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/RD-IV-Daily-Requirements-datasource-template",
+      "UploadSettings": {
+        "Format": "CSV",
+        "StartFromRow": 1,
+        "ContainsHeader": true,
+        "TextQualifier": "DOUBLE_QUOTE",
+        "Delimiter": ","
+      },
+      "InputColumns": [
+        {
+          "Name": "AssessmentNumber",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Class_of_Supply",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Location_Name",
+          "Type": "STRING"
+        },
+        {
+          "Name": "RD",
+          "Type": "STRING"
+        },
+        {
+          "Name": "BOM_NSN",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UOM",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UOM_QTY",
+          "Type": "STRING"
+        },
+        {
+          "Name": "NIIN",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UOM_Type",
+          "Type": "STRING"
+        },
+        {
+          "Name": "JCMS_NIIN_match",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Nomenclature",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UOM_Nomenclature",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UOM_Code",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UOM_X12",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UOM_Alternate_Name",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UOI_Nomenclature",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UOI_Code",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UOI_X12",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UOI_Alternate_Name",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Conversion_Factor",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Volume",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Weight",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Price",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Acquisition_Advice_Code",
+          "Type": "STRING"
+        },
+        {
+          "Name": "HMIC_Type_Code",
+          "Type": "STRING"
+        },
+        {
+          "Name": "NSN",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UI",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UOI_QTY",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Total_Price",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Total_Weight_LB",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Total_Volume_CuFt",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Day",
+          "Type": "STRING"
+        },
+        {
+          "Name": "MEF_Lead",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Region",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Region_MEF_Lead",
+          "Type": "STRING"
+        },
+        {
+          "Name": "POS",
+          "Type": "STRING"
+        }
+      ]
+    }
+  }
+}

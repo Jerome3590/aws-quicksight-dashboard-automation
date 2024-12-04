@@ -1,0 +1,293 @@
+{
+  "RD-IV-Daily-Requirements-logicalTable": {
+    "Alias": "RD_IV_Daily_Requirements_template",
+    "DataTransforms": [
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "AssessmentNumber",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Class_of_Supply",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Location_Name",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "RD",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "BOM_NSN",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UOM",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UOM_QTY",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "NIIN",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UOM_Type",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "JCMS_NIIN_match",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Nomenclature",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UOM_Nomenclature",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UOM_Code",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UOM_X12",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UOM_Alternate_Name",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UOI_Nomenclature",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UOI_Code",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UOI_X12",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UOI_Alternate_Name",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Conversion_Factor",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Volume",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Weight",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Price",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Acquisition_Advice_Code",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "HMIC_Type_Code",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "NSN",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UI",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UOI_QTY",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Total_Price",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Total_Weight_LB",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Total_Volume_CuFt",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Day",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "MEF_Lead",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Region",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "TagColumnOperation": {
+          "ColumnName": "Region",
+          "Tags": [
+            {
+              "ColumnGeographicRole": "STATE"
+            }
+          ]
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Region_MEF_Lead",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "TagColumnOperation": {
+          "ColumnName": "Region_MEF_Lead",
+          "Tags": [
+            {
+              "ColumnGeographicRole": "STATE"
+            }
+          ]
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "POS",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "ProjectOperation": {
+          "ProjectedColumns": [
+            "AssessmentNumber",
+            "Class_of_Supply",
+            "Location_Name",
+            "RD",
+            "BOM_NSN",
+            "UOM",
+            "UOM_QTY",
+            "NIIN",
+            "UOM_Type",
+            "JCMS_NIIN_match",
+            "Nomenclature",
+            "UOM_Nomenclature",
+            "UOM_Code",
+            "UOM_X12",
+            "UOM_Alternate_Name",
+            "UOI_Nomenclature",
+            "UOI_Code",
+            "UOI_X12",
+            "UOI_Alternate_Name",
+            "Conversion_Factor",
+            "Volume",
+            "Weight",
+            "Price",
+            "Acquisition_Advice_Code",
+            "HMIC_Type_Code",
+            "NSN",
+            "UI",
+            "UOI_QTY",
+            "Total_Price",
+            "Total_Weight_LB",
+            "Total_Volume_CuFt",
+            "Day",
+            "MEF_Lead",
+            "Region",
+            "Region_MEF_Lead",
+            "POS"
+          ]
+        }
+      }
+    ],
+    "Source": {
+      "PhysicalTableId": "RD-IV-Daily-Requirements-physicalTable"
+    }
+  }
+}

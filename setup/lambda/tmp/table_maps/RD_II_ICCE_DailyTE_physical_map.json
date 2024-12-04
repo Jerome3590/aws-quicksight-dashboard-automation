@@ -1,0 +1,176 @@
+{
+  "RD-II-ICCE-DailyTE-physicalTable": {
+    "S3Source": {
+      "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/RD-II-ICCE-DailyTE-datasource-template",
+      "UploadSettings": {
+        "Format": "CSV",
+        "StartFromRow": 1,
+        "ContainsHeader": true,
+        "TextQualifier": "DOUBLE_QUOTE",
+        "Delimiter": ","
+      },
+      "InputColumns": [
+        {
+          "Name": "AssessmentNumber",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Class_of_Supply",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Location_Name",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Region_MEF_Lead",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Region",
+          "Type": "STRING"
+        },
+        {
+          "Name": "POS",
+          "Type": "STRING"
+        },
+        {
+          "Name": "MEF",
+          "Type": "STRING"
+        },
+        {
+          "Name": "MSE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UIC",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Type",
+          "Type": "STRING"
+        },
+        {
+          "Name": "TAMCN_Group",
+          "Type": "STRING"
+        },
+        {
+          "Name": "TAMCN",
+          "Type": "STRING"
+        },
+        {
+          "Name": "NIIN",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Day",
+          "Type": "STRING"
+        },
+        {
+          "Name": "COLLOQUIAL_NAME",
+          "Type": "STRING"
+        },
+        {
+          "Name": "CHILD_TAMCN",
+          "Type": "STRING"
+        },
+        {
+          "Name": "TAM_STATUS",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ITEM_EXIT_DATE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "STORES_ACCOUNT_CODE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ITEM_DESIGNATOR_CODE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "READINESS_REPORTABLE_CODE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "PREF_NIIN_IND",
+          "Type": "STRING"
+        },
+        {
+          "Name": "PREF_NIIN_RNK",
+          "Type": "STRING"
+        },
+        {
+          "Name": "EQUIP_CRIT_RNK",
+          "Type": "STRING"
+        },
+        {
+          "Name": "CLASSOFSUPPLY",
+          "Type": "STRING"
+        },
+        {
+          "Name": "STANDARD_UNIT_PRICE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "TE_Orig_Qty",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Mission_TE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "RD",
+          "Type": "STRING"
+        },
+        {
+          "Name": "CAP_Name",
+          "Type": "STRING"
+        },
+        {
+          "Name": "CAP_Names",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ILOC",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Unit_Name",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Priority",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Parent_UIC",
+          "Type": "STRING"
+        },
+        {
+          "Name": "AAC",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Prepo_Enabled",
+          "Type": "STRING"
+        },
+        {
+          "Name": "isArty",
+          "Type": "STRING"
+        },
+        {
+          "Name": "TAMCN_5",
+          "Type": "STRING"
+        },
+        {
+          "Name": "TARIFF_FCTR",
+          "Type": "STRING"
+        }
+      ]
+    }
+  }
+}

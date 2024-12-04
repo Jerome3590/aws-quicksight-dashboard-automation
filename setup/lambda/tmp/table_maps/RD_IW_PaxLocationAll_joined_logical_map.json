@@ -1,0 +1,293 @@
+{
+  "RD-IW-PaxLocationAll-joined-logicalTable": {
+    "Alias": "RD_IW_PaxLocationAll_joined_template",
+    "DataTransforms": [
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "AssessmentNumber",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Class_of_Supply",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Location_ID",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Service",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "MEF",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "MSE",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CAP_Name",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CAP_Names",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UIC",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Day",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Flowin",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Cumflow",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Wparameter",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Plan",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Potable",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "NonPotable",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Total_Water",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Drinking",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Potable_Rqmt",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "NonPotable_Rqmt",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Total_Rqmt",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Drinking_Rqmt",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS_Period",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Location_Name",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Region",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "TagColumnOperation": {
+          "ColumnName": "Region",
+          "Tags": [
+            {
+              "ColumnGeographicRole": "STATE"
+            }
+          ]
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Region_MEF_Lead",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "TagColumnOperation": {
+          "ColumnName": "Region_MEF_Lead",
+          "Tags": [
+            {
+              "ColumnGeographicRole": "STATE"
+            }
+          ]
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "daily_Inflow",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "daily_Potable_Rqmt",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "daily_NonPotable_Rqmt",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "daily_Drinking_Rqmt",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "daily_Total_Potable_NonPotable_Rqmt",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "POS",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Period",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Sort_Index",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "ProjectOperation": {
+          "ProjectedColumns": [
+            "AssessmentNumber",
+            "Class_of_Supply",
+            "Location_ID",
+            "Service",
+            "MEF",
+            "MSE",
+            "CAP_Name",
+            "CAP_Names",
+            "UIC",
+            "Day",
+            "Flowin",
+            "Cumflow",
+            "Wparameter",
+            "Plan",
+            "Potable",
+            "NonPotable",
+            "Total_Water",
+            "Drinking",
+            "Potable_Rqmt",
+            "NonPotable_Rqmt",
+            "Total_Rqmt",
+            "Drinking_Rqmt",
+            "DOS_Period",
+            "Location_Name",
+            "Region",
+            "Region_MEF_Lead",
+            "daily_Inflow",
+            "daily_Potable_Rqmt",
+            "daily_NonPotable_Rqmt",
+            "daily_Drinking_Rqmt",
+            "daily_Total_Potable_NonPotable_Rqmt",
+            "POS",
+            "DOS",
+            "Period",
+            "Sort_Index"
+          ]
+        }
+      }
+    ],
+    "Source": {
+      "PhysicalTableId": "RD-IW-PaxLocationAll-joined-physicalTable"
+    }
+  }
+}

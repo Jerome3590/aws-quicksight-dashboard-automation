@@ -1,0 +1,1351 @@
+---
+title: "Dashboard Definition File"
+author: "Jerome Dixon"
+execute:
+  eval: false
+format:
+  html:
+    link-external-icon: true
+    link-external-newwindow: true
+    toc: true
+    toc-depth: 5
+    code-fold: true
+    code-summary: "Show the code"
+    embed-resources: true
+    default-image-extension: svg
+    dpi: 600
+    theme: cosmo
+editor: visual
+jupyter: python3
+---
+
+### Python Environment
+
+```{python}
+
+import os
+import json
+import logging
+import shutil
+from datetime import datetime
+import boto3
+from botocore.exceptions import ClientError
+
+# Set up logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Create a boto3 session with the specific profile
+session = boto3.Session(profile_name='quicksight')
+
+# Initialize clients
+dynamodb_client = session.client('dynamodb')
+quicksight_client = session.client('quicksight')
+
+# Configuration
+dynamodb_table = os.getenv('DYNAMODB_TABLE', 'imat-dashboard-datasets')
+aws_account_id = os.getenv('AWS_ACCOUNT_ID', 'xxxxxxxxxxxx')
+region = os.getenv('AWS_REGION', 'us-east-1')
+owner_arn = os.getenv('OWNER_ARN', 'arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:user/default/quicksight')
+
+```
+
+### Template Files
+
+```{python}
+
+# Get the directory of the current script
+current_dir = os.path.dirname(os.path.abspath(__name__))
+
+# Paths to JSON files relative to the script's location
+template_dir = os.path.join(current_dir, 'tmp/templates')
+template_path = os.path.join(template_dir, 'base_template.json')
+dashboard_definition_path = os.path.join(template_dir, 'dashboard_definition.json')
+dashboard_path = os.path.join(template_dir, 'dashboard.json')
+
+# List contents of the templates directory
+try:
+    logger.info(f"Listing files in {template_dir}:")
+    template_files = os.listdir(template_dir)
+    for file in template_files:
+        logger.info(f" - {file}")
+except FileNotFoundError:
+    logger.error(f"Directory not found: {template_dir}")
+except Exception as e:
+    logger.error(f"Error accessing directory {template_dir}: {str(e)}")
+
+template_files
+
+```
+
+```{python}
+
+def read_json_file(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+            logger.info(f"Successfully read JSON from {file_path}")
+            return data
+    except FileNotFoundError:
+        logger.error(f"File not found: {file_path}")
+    except json.JSONDecodeError:
+        logger.error(f"Error decoding JSON from file: {file_path}")
+    except Exception as e:
+        logger.error(f"Error reading file {file_path}: {str(e)}")
+    return None
+
+```
+
+### Definition Files
+
+prod: 478158c8-17cd-4954-b0bd-d9f733b7b30a test: 8abba5d7-2e1c-411b-b122-0a589a708651
+
+```{bash eval=FALSE}
+
+aws quicksight describe-dashboard-definition --dashboard-id '8abba5d7-2e1c-411b-b122-0a589a708651' --aws-account-id xxxxxxxxxxxx | jq '.Definition' > test_definition.json
+
+```
+
+```{bash eval=FALSE}
+
+aws quicksight describe-dashboard --dashboard-id '478158c8-17cd-4954-b0bd-d9f733b7b30a' --aws-account-id xxxxxxxxxxxx > dashboard.json
+
+```
+
+```{python}
+
+# Get the directory of the current script
+current_dir = os.path.dirname(os.path.abspath(__name__))
+
+definition_dir = os.path.join(current_dir, 'tmp/definition')
+definition_path = os.path.join(definition_dir, 'base_definition.txt')
+
+# List contents of the definition directory
+try:
+    logger.info(f"Listing files in {definition_dir}:")
+    definition_files = os.listdir(definition_dir)
+    for file in definition_files:
+        logger.info(f" - {file}")
+except FileNotFoundError:
+    logger.error(f"Directory not found: {definition_dir}")
+except Exception as e:
+    logger.error(f"Error accessing directory {definition_dir}: {str(e)}")
+
+definition_files
+
+```
+
+```{python}
+
+def read_txt_file(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            data = file.read()
+            logger.info(f"Successfully read text from {file_path}")
+            return data
+    except FileNotFoundError:
+        logger.error(f"File not found: {file_path}")
+    except Exception as e:
+        logger.error(f"Error reading file {file_path}: {str(e)}")
+    return None
+
+```
+
+### Available Datasets (DynamoDB)
+
+```{python}
+
+def query_dynamodb_for_datasets(dynamodb_client, dynamodb_table, assessment_id):
+    try:
+        response = dynamodb_client.query(
+            TableName=dynamodb_table,
+            KeyConditionExpression='assessment_id = :assessment_id',
+            ExpressionAttributeValues={':assessment_id': {'S': assessment_id}}
+        )
+        datasets = [item['dataset_id']['S'] for item in response.get('Items', [])]
+        logger.info(f"Available datasets for assessment_id {assessment_id}: {datasets}")
+        return datasets
+    except Exception as e:
+        logger.error(f"Error querying DynamoDB: {e}")
+        raise
+
+```
+
+```{python}
+
+available_datasets = query_dynamodb_for_datasets(dynamodb_client, dynamodb_table, '20200215382')
+
+available_datasets
+
+```
+
+```{python}
+
+len(available_datasets)
+
+```
+
+#### Dataset to Table Map Mapping
+
+-   Check to see if dataset logical table map matches DataSetArn and FieldID in dashboard definition json
+
+```{python}
+
+import json
+import csv
+
+def parse_field_ids_and_identifiers(json_data):
+    field_id_to_dataset = []
+
+    # Function to extract FieldId and DataSetIdentifier from a visual's field wells
+    def extract_fields(visual):
+        if 'ChartConfiguration' in visual:
+            if 'FieldWells' in visual['ChartConfiguration']:
+                field_wells = visual['ChartConfiguration']['FieldWells']
+                for well_type, fields in field_wells.items():
+                    for field_group in fields:
+                        for field in field_group:
+                            if 'FieldId' in field and 'Column' in field:
+                                field_id = field['FieldId']
+                                dataset_identifier = field['Column'].get('DataSetIdentifier')
+                                field_id_to_dataset.append((field_id, dataset_identifier))
+
+    # Iterate through sheets and visuals to extract FieldIds and their corresponding DataSetIdentifiers
+    for sheet in json_data.get('Sheets', []):
+        for visual in sheet.get('Visuals', []):
+            for visual_type, visual_content in visual.items():
+                extract_fields(visual_content)
+
+    return field_id_to_dataset
+
+# read in json data
+base_dashboard_definition = read_json_file(dashboard_definition_path)
+
+```
+
+```{python}
+
+# Parse the FieldIds and DataSetIdentifiers
+field_id_to_dataset = parse_field_ids_and_identifiers(base_dashboard_definition)
+
+# Output the results
+for field_id, dataset_identifier in field_id_to_dataset:
+    print(f"FieldId: {field_id}, DataSetIdentifier: {dataset_identifier}")
+
+# Save the results to a CSV file
+csv_file_path = 'field_ids_and_dataset_identifiers.csv'
+with open(csv_file_path, 'w', newline='') as csvfile:
+    csvwriter = csv.writer(csvfile)
+    csvwriter.writerow(['FieldId', 'DataSetIdentifier'])  # Write header
+    csvwriter.writerows(field_id_to_dataset)
+
+```
+
+```{python}
+
+base_dashboard_definition = read_json_file(dashboard_definition_path)
+
+print(base_dashboard_definition)
+
+```
+
+```{bash}
+
+file_name=RD_I_PaxLocationAll
+dataset_id=RD-I-PaxLocationAll-dataset-template
+
+# Fetch dataset details using the dataset ID
+dataset_info=$(aws quicksight describe-data-set \
+  --aws-account-id "$imat_account_id" \
+  --data-set-id "$dataset_id" \
+  --region us-east-1 \
+  --profile quicksight)
+
+# Check for errors in fetching dataset details
+if [ $? -ne 0 ]; then
+    echo "Error in fetching details for dataset ID: $dataset_id"
+    exit 1
+fi
+
+# Extract the LogicalTableMap and save it to a file
+logical_table_map=$(echo "$dataset_info" | jq -r '.DataSet.LogicalTableMap')
+
+# Save LogicalTableMap to a JSON file
+echo "$logical_table_map" > "${file_name}_logical_map.json"
+
+# Print LogicalTableMap
+echo "$logical_table_map"
+
+```
+
+#### ARNs
+
+```{python}
+
+def convert_dataset_ids_to_arns(dataset_ids, aws_account_id, region):
+
+    def convert_to_arn(dataset_id):
+        file_id = dataset_id.split('-dataset-')[0]  # Extract the file_id part
+        assessment_id = dataset_id.split('-dataset-')[1]  # Extract the assessment_id part
+        return f"arn:aws:quicksight:{region}:{aws_account_id}:dataset/{file_id}-dataset-{assessment_id}"
+
+    # Convert all dataset_ids to DataSetArns
+    dataset_arns = [convert_to_arn(dataset_id) for dataset_id in dataset_ids]
+
+    return dataset_arns
+
+```
+
+```{python}
+
+arns = convert_dataset_ids_to_arns(available_datasets, aws_account_id, region)
+
+arns
+
+```
+
+### Dashboard DataSet Mapping
+
+```{python}
+
+dashboard_definition = read_json_file(dashboard_definition_path)
+
+dashboard_map = read_json_file(dashboard_path)
+
+```
+
+#### SheetIDs
+
+```{python}
+
+# Extract the sheets from dashboard.json
+dashboard_sheets = {
+    (sheet["SheetId"], sheet["Name"]) for sheet in dashboard_map["Dashboard"]["Version"]["Sheets"]
+}
+
+len(dashboard_sheets)
+
+dashboard_sheets
+
+```
+
+#### ARNs
+
+```{python}
+
+# Extract the dataset arns from dashboard.json
+dashboard_arns = dashboard_map["Dashboard"]["Version"]["DataSetArns"]
+
+
+len(dashboard_arns)
+
+dashboard_arns
+
+```
+
+#### FilterGroup IDs
+
+```{python}
+
+dashboard_filters = dashboard_definition['FilterGroups']
+
+dashboard_filters
+
+len(dashboard_filters)
+
+```
+
+### Test Datasets
+
+```{python}
+
+classi_available_datasets=['AssessmentParameterDataMapTable-dataset-9002', 'AssessmentTable-dataset-9002', 'ForceFlow-joined-dataset-9002', 'Locations-dataset-9002', 'POS-dataset-9002', 'RD-I-POS-Location-dataset-9002', 'RD-I-POS-Pallet-Requirement-dataset-9002', 'RD-I-PaxLocationAll-dataset-9002', 'RD-I-Ration-Costs-dataset-9002', 'RD-IW-POS-Requirement-dataset-9002', 'RD-IW-PaxLocationAll-dataset-9002', 'RD-IW-Ration-Costs-dataset-9002', 'aggregated-embark-dataset-9002', 'cosi-embark-dataset-9002', 'cosi-water-embark-dataset-9002']
+
+classi_iiip_available_datasetes=['AssessmentParameterDataMapTable-dataset-9002', 'AssessmentTable-dataset-9002', 'ForceFlow-joined-dataset-9002', 'Locations-dataset-9002', 'POS-dataset-9002', 'RD-I-POS-Location-dataset-9002', 'RD-I-POS-Pallet-Requirement-dataset-9002', 'RD-I-PaxLocationAll-dataset-9002', 'RD-I-Ration-Costs-dataset-9002', 'RD-IIIP-POL-Pkg-NSN-Requirements-PBI-dataset-9002', 'RD-IW-POS-Requirement-dataset-9002', 'RD-IW-PaxLocationAll-dataset-9002', 'RD-IW-Ration-Costs-dataset-9002', 'aggregated-embark-dataset-9002', 'cosi-embark-dataset-9002', 'cosi-water-embark-dataset-9002', 'cosiiip-embark-dataset-9002']
+
+classix_available_datasets=['AssessmentParameterDataMapTable-dataset-9002', 'AssessmentTable-dataset-9002', 'Locations-dataset-9002', 'POS-dataset-9002', 'RD-IX-Requirement-dataset-9002', 'aggregated-embark-dataset-9002', 'cosix-embark-dataset-9002']
+
+classiiip_iv=['AssessmentParameterDataMapTable-dataset-9002', 'AssessmentTable-dataset-9002', 'Locations-dataset-9002', 'POS-dataset-9002', 'RD-IIIP-POL-Pkg-NSN-Requirements-PBI-dataset-9002', 'RD-IV-Daily-Requirements-dataset-9002', 'aggregated-embark-dataset-9002', 'cosiiip-embark-dataset-9002', 'cosiv-embark-dataset-9002']
+
+
+```
+
+```{python}
+
+len(classi_available_datasets)
+
+```
+
+```{python}
+
+available_datasets=classi_available_datasets
+available_datasets
+
+```
+
+```{python}
+
+dataset_arns = convert_dataset_ids_to_arns(available_datasets, aws_account_id, region)
+
+dataset_arns
+
+```
+
+### Definition File Layout
+
+{
+
+dataset_identifiers,
+
+"Sheets": \[
+
+summary, force_flow, embark, cosi, cosi_embark, cosii_vii, cosii_vii_embark, cosiiip, cosiip_embark, cosiv, cosiv_embark, cosvi, cosvi_embark, cosix, cosix_embark
+
+\],
+
+calculated_fields,
+
+parameters,
+
+filter_groups,
+
+column_config,
+
+analysis_defaults
+
+}
+
+#### Dataset Identifiers
+
+```{python}
+
+def update_identifiers(assessment_id, dataset_arns):
+    datasets = read_txt_file(os.path.join(definition_dir, 'dataset_identifiers.json'))
+    updated_datasets = datasets.replace('-dataset-template', f'-dataset-{assessment_id}')
+    updated_datasets = json.loads(updated_datasets)
+    # Filter the DataSetIdentifierDeclarations to only include the specified DataSetArns
+    dataset_identifiers = {
+        "DataSetIdentifierDeclarations": [
+          item for item in updated_datasets["DataSetIdentifierDeclarations"]
+          if item["DataSetArn"] in dataset_arns
+          ]
+    }
+
+    return dataset_identifiers["DataSetIdentifierDeclarations"]
+
+```
+
+```{python}
+
+import json
+
+assessment_id = '9002'
+
+dataset_identifiers = update_identifiers(assessment_id, dataset_arns)
+
+#print(json.dumps(dataset_identifiers, indent=2))
+
+
+```
+
+#### Summary File
+
+```{python}
+
+def update_summary(assessment_id):
+    summary = read_txt_file(os.path.join(definition_dir, 'summary.json'))
+    updated_summary = summary.replace('-dataset-template', f'-dataset-{assessment_id}')
+    updated_summary = json.loads(updated_summary)
+    return updated_summary
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_summary = update_summary(assessment_id)
+
+#print(updated_summary)
+
+```
+
+#### Force Flow
+
+```{python}
+
+def update_force_flow(assessment_id):
+    force_flow = read_txt_file(os.path.join(definition_dir, 'force_flow.json'))
+    updated_force_flow = force_flow.replace('-dataset-template', f'-dataset-{assessment_id}')
+    updated_force_flow = json.loads(updated_force_flow)
+    return updated_force_flow
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_force_flow = update_force_flow(assessment_id)
+
+#print(updated_force_flow)
+
+```
+
+#### Embark
+
+```{python}
+
+def update_embark(assessment_id):
+    embark = read_txt_file(os.path.join(definition_dir, 'embark.json'))
+    updated_embark = embark.replace('-dataset-template', f'-dataset-{assessment_id}')
+    updated_embark = json.loads(updated_embark)
+    return updated_embark
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_embark = update_embark(assessment_id)
+
+#print(updated_embark)
+
+```
+
+#### COS I
+
+```{python}
+
+def update_cosi(assessment_id):
+    cosi = read_txt_file(os.path.join(definition_dir, 'cosi.json'))
+    updated_cosi = json.loads(cosi.replace('-dataset-template', f'-dataset-{assessment_id}'))
+    return updated_cosi
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_cosi = update_cosi(assessment_id)
+
+#print(updated_cosi)
+
+```
+
+#### COS I Embark
+
+```{python}
+
+def update_cosi_embark(assessment_id):
+    cosi_embark = read_txt_file(os.path.join(definition_dir, 'cosi_embark.json'))
+    updated_cosi_embark = cosi_embark.replace('-dataset-template', f'-dataset-{assessment_id}')
+    updated_cosi_embark = json.loads(updated_cosi_embark)
+    return updated_cosi_embark
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_cosi_embark = update_cosi_embark(assessment_id)
+
+#print(updated_cosi_embark)
+
+```
+
+#### COS I Water
+
+```{python}
+
+def update_cosi_water(assessment_id):
+    cosi_water = read_txt_file(os.path.join(definition_dir, 'cosi_water.json'))
+    updated_cosi_water = cosi_water.replace('-dataset-template', f'-dataset-{assessment_id}')
+    return updated_cosi_water
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_cosi_water = update_cosi_water(assessment_id)
+
+#print(updated_cosi_water)
+
+```
+
+#### COS II/VII
+
+```{python}
+
+def update_cosii_vii(assessment_id):
+    cosii_vii = read_txt_file(os.path.join(definition_dir, 'cosii_vii.json'))
+    updated_cosii_vii = cosii_vii.replace('-dataset-template', f'-dataset-{assessment_id}')
+    updated_cosii_vii = json.loads(updated_cosii_vii)
+    return updated_cosii_vii
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_cosii_vii = update_cosii_vii(assessment_id)
+
+#print(updated_cosii_vii)
+
+```
+
+#### COS II/VII Embark
+
+```{python}
+
+def update_cosii_vii_embark(assessment_id):
+    cosii_vii_embark = read_txt_file(os.path.join(definition_dir, 'cosii_vii_embark.json'))
+    updated_cosii_vii_embark = cosii_vii_embark.replace('-dataset-template', f'-dataset-{assessment_id}')
+    updated_cosii_vii_embark = json.loads(updated_cosii_vii_embark)
+    return updated_cosii_vii_embark
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_cosii_vii_embark = update_cosii_vii_embark(assessment_id)
+
+#print(updated_cosii_vii_embark)
+
+```
+
+#### COS IIIP
+
+```{python}
+
+def update_cosiiip(assessment_id):
+    cosiiip = read_txt_file(os.path.join(definition_dir, 'cosiiip.json'))
+    updated_cosiiip = cosiiip.replace('-dataset-template', f'-dataset-{assessment_id}')
+    updated_cosiiip = json.loads(updated_cosiiip)
+    return updated_cosiiip
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_cosiiip = update_cosiiip(assessment_id)
+
+#print(updated_cosiiip)
+
+```
+
+#### COS IIIP Embark
+
+```{python}
+
+def update_cosiiip_embark(assessment_id):
+    cosiiip_embark = read_txt_file(os.path.join(definition_dir, 'cosiiip_embark.json'))
+    updated_cosiiip_embark = cosiiip_embark.replace('-dataset-template', f'-dataset-{assessment_id}')
+    updated_cosiiip_embark = json.loads(updated_cosiiip_embark)
+    return updated_cosiiip_embark
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_cosiiip_embark = update_cosiiip_embark(assessment_id)
+
+#print(updated_cosiiip_embark)
+
+```
+
+#### COS IV
+
+```{python}
+
+def update_cosiv(assessment_id):
+    cosiv = read_txt_file(os.path.join(definition_dir, 'cosiv.json'))
+    updated_cosiv = cosiv.replace('-dataset-template', f'-dataset-{assessment_id}')
+    updated_cosiv = json.loads(updated_cosiv)
+    return updated_cosiv
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_cosiv = update_cosiv(assessment_id)
+
+#print(updated_cosiv)
+
+```
+
+#### COS IV Embark
+
+```{python}
+
+def update_cosiv_embark(assessment_id):
+    cosiv_embark = read_txt_file(os.path.join(definition_dir, 'cosiv_embark.json'))
+    updated_cosiv_embark = cosiv_embark.replace('-dataset-template', f'-dataset-{assessment_id}')
+    updated_cosiv_embark = json.loads(updated_cosiv_embark)
+    return updated_cosiv_embark
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_cosiv_embark = update_cosiv_embark(assessment_id)
+
+#print(updated_cosiv_embark)
+
+```
+
+#### COS VI
+
+```{python}
+
+def update_cosvi(assessment_id):
+    cosvi = read_txt_file(os.path.join(definition_dir, 'cosvi.json'))
+    updated_cosvi = cosvi.replace('-dataset-template', f'-dataset-{assessment_id}')
+    updated_cosvi = json.loads(updated_cosvi)
+    return updated_cosvi
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_cosvi = update_cosvi(assessment_id)
+
+#print(updated_cosvi)
+
+```
+
+#### COS VI Embark
+
+```{python}
+
+def update_cosvi_embark(assessment_id):
+    cosvi_embark = read_txt_file(os.path.join(definition_dir, 'cosvi_embark.json'))
+    updated_cosvi_embark = cosvi_embark.replace('-dataset-template', f'-dataset-{assessment_id}')
+    updated_cosvi_embark = json.loads(updated_cosvi_embark)
+    return updated_cosvi_embark
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_cosvi_embark = update_cosvi_embark(assessment_id)
+
+#print(updated_cosvi_embark)
+
+```
+
+#### COS IX
+
+```{python}
+
+def update_cosix(assessment_id):
+    cosix = read_txt_file(os.path.join(definition_dir, 'cosix.json'))
+    updated_cosix = cosix.replace('-dataset-template', f'-dataset-{assessment_id}')
+    updated_cosix = json.loads(updated_cosix)
+    return updated_cosix
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_cosix = update_cosix(assessment_id)
+
+#print(updated_cosix)
+
+```
+
+#### COS IX Embark
+
+```{python}
+
+def update_cosix_embark(assessment_id):
+    cosix_embark = read_txt_file(os.path.join(definition_dir, 'cosix_embark.json'))
+    updated_cosix_embark = cosix_embark.replace('-dataset-template', f'-dataset-{assessment_id}')
+    updated_cosix_embark = json.loads(updated_cosix_embark)
+    return updated_cosix_embark
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_cosix_embark = update_cosix_embark(assessment_id)
+
+#print(updated_cosix_embark)
+
+```
+
+#### Calculated Fields
+
+```{python}
+
+
+def convert_datasetID_to_identifier(available_datasets):
+
+    dataset_identifiers = []
+
+    # Replace '-dataset-{assessment_id}' with '_dataset_template'
+    for dataset in available_datasets:
+
+        assessment_id = dataset.split('-dataset-')[1]
+
+        # Replace '-dataset-{assessment_id}' with '_dataset_template'
+        identifier = dataset.replace(f'-dataset-{assessment_id}', '_dataset_template')
+
+        # Add the converted identifier to the list
+        dataset_identifiers.append(identifier)
+    return dataset_identifiers
+
+
+def update_calculated_fields(available_datasets):
+    dataset_identifiers = convert_datasetID_to_identifier(available_datasets)
+    calculated_fields = read_txt_file(os.path.join(definition_dir, 'calculated_fields.json'))
+    updated_calculated_fields = calculated_fields.replace('-dataset-template', f'-dataset-{assessment_id}')
+    calculated_fields = json.loads(updated_calculated_fields)
+
+    # Filter the DataSetIdentifiers to only include the specified DataSetArns
+    filtered_calculated_fields = [
+        field for field in calculated_fields["CalculatedFields"]
+        if field["DataSetIdentifier"] in dataset_identifiers
+    ]
+
+    return filtered_calculated_fields
+
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_calculated_fields = update_calculated_fields(available_datasets)
+
+print(updated_calculated_fields)
+
+```
+
+#### Filter Groups
+
+```{python}
+
+def update_filter_groups(assessment_id):
+    filter_groups = read_txt_file(os.path.join(definition_dir, 'filter_groups.json'))
+    updated_filter_groups = filter_groups.replace('-dataset-template', f'-dataset-{assessment_id}')
+    filter_groups = json.loads(updated_filter_groups)
+
+    return filter_groups["FilterGroups"]
+
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_filter_groups = update_filter_groups(assessment_id)
+
+#print(json.dumps(updated_filter_groups, indent=2))
+
+```
+
+#### Column Config
+
+```{python}
+
+def update_column_config(assessment_id):
+    column_config = read_txt_file(os.path.join(definition_dir, 'column_config.json'))
+    updated_column_config = column_config.replace('-dataset-template', f'-dataset-{assessment_id}')
+    column_config = json.loads(updated_column_config)
+
+    return column_config["ColumnConfigurations"]
+
+
+```
+
+```{python}
+
+assessment_id = '9002'
+
+updated_column_config = update_column_config(assessment_id)
+
+#print(updated_column_config)
+
+```
+
+#### Parameters
+
+```{python}
+
+def update_parameters():
+    parameters = read_txt_file(os.path.join(definition_dir, 'parameters.json'))
+    parameters = json.loads(parameters)
+
+    return parameters["ParameterDeclarations"]
+
+
+```
+
+```{python}
+
+updated_parameters = update_parameters()
+
+#print(updated_parameters)
+
+```
+
+#### Analysis Defaults
+
+```{python}
+
+def update_analysis_defaults():
+    analysis_defaults = read_txt_file(os.path.join(definition_dir, 'analysis_defaults.json'))
+    analysis_defaults = json.loads(analysis_defaults)
+
+    return analysis_defaults["AnalysisDefaults"]
+
+
+```
+
+```{python}
+
+updated_analysis_defaults = update_analysis_defaults()
+
+#print(updated_analysis_defaults)
+
+```
+
+### Sheet Map
+
+```{python}
+
+# Map of sheet data with corresponding functions
+sheet_map = [
+    {
+        "Name": "Summary",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_e51807d5-759c-4f3f-a8c9-5a7a7769f669",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/POS-dataset-{assessment_id}",
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/AssessmentTable-dataset-{assessment_id}",
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/AssessmentParameterDataMapTable-dataset-{assessment_id}",
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/Locations-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [],
+        "DataSetIdentifier": [
+            "POS_dataset_template",
+            "AssessmentTable_dataset_template",
+            "AssessmentParameterDataMapTable_dataset_template",
+            "Locations_dataset_template"
+        ]
+    },
+    {
+        "Name": "Force Flow",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_bf7f9197-5e8e-4d23-b5ac-36f46264bbb8",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/ForceFlow-joined-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [
+            "0914a0e1-133f-4a40-92e3-69ea39972ad5",
+            "67f3d86f-eadb-4f92-a84a-5540947e526d"
+        ],
+        "DataSetIdentifier": [
+            "ForceFlow_joined_dataset_template"
+        ]
+    },
+    {
+        "Name": "Embark",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_2af98535-de44-44d6-8854-efa53dae6a1a",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/aggregated-embark-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [],
+        "DataSetIdentifier": [
+            "aggregated_embark_dataset_template"
+        ]
+    },
+    {
+        "Name": "CL I RD",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_324eac0b-aedd-4e95-ad84-4f32c887b96c",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-I-Ration-Costs-dataset-{assessment_id}",
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-I-POS-Pallet-Requirement-dataset-{assessment_id}",
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-I-POS-Location-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [],
+        "DataSetIdentifier": [
+            "RD_I_Ration_Costs_dataset_template",
+            "RD_I_POS_Pallet_Requirement_dataset_template",
+            "RD_I_POS_Location_dataset_template"
+        ]
+    },
+    {
+        "Name": "CL I RD Embark",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_ddb9a1a3-e986-434e-94bf-1420029558d4",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosi-embark-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [],
+        "DataSetIdentifier": [
+            "cosi_embark_dataset_template"
+        ]
+    },
+    {
+        "Name": "CL I (W) RD",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_5f2403c1-8030-464e-b8e0-24b4edbbabed",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-IW-Ration-Costs-dataset-{assessment_id}",
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-IW-POS-Requirement-dataset-{assessment_id}",
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-IW-PaxLocationAll-dataset-{assessment_id}",
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosi-water-embark-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [],
+        "DataSetIdentifier": [
+            "RD_IW_Ration_Costs_dataset_template",
+            "RD_IW_POS_Requirement_dataset_template",
+            "RD_IW_PaxLocationAll_dataset_template",
+            "cosi_water_embark_dataset_template"
+        ]
+    },
+    {
+        "Name": "CL II/VII RD",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_0d7218f9-d08f-4e30-849b-fdac239c4860",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-II-VII-DailyTE-WithDimensions-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [],
+        "DataSetIdentifier": [
+            "RD_II_VII_DailyTE_WithDimensions_dataset_template"
+        ]
+    },
+    {
+        "Name": "CL II/VII RD Embark",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_be85f5a0-99ea-40a6-9cc5-3457ff75584b",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosii-vii-embark-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [],
+        "DataSetIdentifier": [
+            "cosii_vii_embark_dataset_template"
+        ]
+    },
+    {
+        "Name": "CL IIIP RD",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_8793e360-b5cc-46b0-bcfc-88eacd92b6ac",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosiiip-embark-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [],
+        "DataSetIdentifier": [
+            "cosiiip_embark_dataset_template"
+        ]
+    },
+    {
+        "Name": "CL IIIP RD Embark",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_1ab421bb-d73d-43bb-a5eb-f9fd2067e87f",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosiiip-embark-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [],
+        "DataSetIdentifier": [
+            "cosiiip_embark_dataset_template"
+        ]
+    },
+    {
+        "Name": "CL IV RD",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_18dd01ba-31c2-4d1d-8d2e-a9680442616c",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosiv-embark-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [],
+        "DataSetIdentifier": [
+            "cosiv_embark_dataset_template"
+        ]
+    },
+    {
+        "Name": "CL IV RD Embark",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_c4689f3b-ad7d-4139-b954-fd717878a128",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosiv-embark-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [
+            "7e72ca91-97d7-411d-98db-a9531d1cbbc6",
+            "9b2e4ff6-b1a0-4341-a118-94b36e043e67"
+        ],
+        "DataSetIdentifier": [
+            "cosiv_embark_dataset_template"
+        ]
+    },
+    {
+        "Name": "CL VI RD",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_9c743487-88ec-4373-a8ee-e50e30a5d2cd",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosvi-embark-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [],
+        "DataSetIdentifier": [
+            "cosvi_embark_dataset_template"
+        ]
+    },
+    {
+        "Name": "CL VI RD Embark",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_a3e72501-6bd5-4c82-a251-9c9d1ae4b4aa",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosvi-embark-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [
+            "78152c87-c18b-4a6f-acc2-1b3981cf6d62",
+            "561dc1b3-40bd-44c2-bd5c-617e4f825d71",
+            "4ea69a61-8f56-4bad-b49b-9c4a1b5cf399"
+        ],
+        "DataSetIdentifier": [
+            "cosvi_embark_dataset_template"
+        ]
+    },
+    {
+        "Name": "CL IX RD",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_8169120a-a8bf-4157-a947-3f1e1331a3ae",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/RD-IX-Requirement-dataset-{assessment_id}",
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosix-embark-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [],
+        "DataSetIdentifier": [
+            "RD_IX_Requirement_dataset_template",
+            "cosix_embark_dataset_template"
+        ]
+    },
+    {
+        "Name": "CL IX RD Embark",
+        "SheetId": "478158c8-17cd-4954-b0bd-d9f733b7b30a_97398e3d-2581-473a-b88d-98cb0f438173",
+        "DataSetArns": [
+            f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/cosix-embark-dataset-{assessment_id}"
+        ],
+        "FilterGroupId": [],
+        "DataSetIdentifier": [
+            "cosix_embark_dataset_template"
+        ]
+    }
+]
+
+
+```
+
+### Updated Definition File
+
+\`
+
+```{python}
+
+# Function to convert dataset IDs to identifiers
+def convert_datasetID_to_identifier(available_datasets):
+    dataset_identifiers = []
+    for dataset in available_datasets:
+        assessment_id = dataset.split('-dataset-')[1]
+        identifier = dataset.replace(f'-dataset-{assessment_id}', '_dataset_template').replace('-', '_')
+        dataset_identifiers.append(identifier)
+    return dataset_identifiers
+
+
+# Function to filter and update the dashboard definition
+def update_dashboard_definition(assessment_id, available_datasets, sheet_map, dashboard_definition_path):
+
+    dataset_identifiers = convert_datasetID_to_identifier(available_datasets)
+
+    # Read the dashboard definition from the file
+    dashboard_definition = read_txt_file(dashboard_definition_path)
+
+    # Replace '-dataset-template' with '-dataset-{assessment_id}'
+    updated_dashboard = dashboard_definition.replace('-dataset-template', f'-dataset-{assessment_id}')
+
+    # Load the updated dashboard JSON
+    updated_dashboard = json.loads(updated_dashboard)
+
+    # Filter DataSetIdentifierDeclarations
+    updated_dashboard['DataSetIdentifierDeclarations'] = [
+        declaration for declaration in updated_dashboard.get('DataSetIdentifierDeclarations', [])
+        if declaration['Identifier'] in dataset_identifiers
+    ]
+
+    # Filter sheet_map by available_datasets
+    filtered_sheet_map = [
+        sheet for sheet in sheet_map
+        if any(
+            dataset.split('/')[-1] in available_datasets  # Extract just the dataset name from the ARN
+            for dataset in sheet["DataSetArns"]
+        )
+    ]
+
+    # Extract the sheets from filtered_sheet_map
+    updated_sheets = {
+        (sheet["SheetId"], sheet["Name"]) for sheet in filtered_sheet_map
+    }
+
+    # Extract the SheetIds from updated_sheets
+    sheet_ids_to_keep = {sheet_id for sheet_id, _ in updated_sheets}
+
+    # Filter Sheets in updated_dashboard based on SheetIds
+    updated_dashboard['Sheets'] = [
+        sheet for sheet in updated_dashboard.get("Sheets", [])
+        if sheet["SheetId"] in sheet_ids_to_keep
+    ]
+
+    # Filter CalculatedFields based on available_datasets
+    updated_dashboard['CalculatedFields'] = [
+        field for field in updated_dashboard.get("CalculatedFields", [])
+        if field["DataSetIdentifier"] in dataset_identifiers
+    ]
+
+    # Filter FilterGroups based on the identifiers (if needed in the definition)
+    if 'FilterGroups' in updated_dashboard:
+        filter_group_ids_to_keep = set(
+            fg_id for sheet in filtered_sheet_map
+            for fg_id in sheet.get("FilterGroupId", [])
+        )
+
+        updated_dashboard['FilterGroups'] = [
+            fg for fg in updated_dashboard['FilterGroups']
+            if fg['FilterGroupId'] in filter_group_ids_to_keep
+        ]
+
+    return updated_dashboard
+
+
+```
+
+### Final Workflow
+
+#### Build Definition File
+
+```{python}
+
+import logging
+import boto3
+
+assessment_id = '9002'
+new_dashboard_id = f"RD-Assessment-{assessment_id}-test15"
+new_dashboard_name = f"RD_Assessment#{assessment_id}-test15"
+
+available_datasets=['AssessmentParameterDataMapTable-dataset-9002', 'AssessmentTable-dataset-9002', 'ForceFlow-joined-dataset-9002', 'Locations-dataset-9002', 'POS-dataset-9002', 'RD-I-POS-Location-dataset-9002', 'RD-I-POS-Pallet-Requirement-dataset-9002', 'RD-I-PaxLocationAll-dataset-9002', 'RD-I-Ration-Costs-dataset-9002', 'RD-IW-POS-Requirement-dataset-9002', 'RD-IW-PaxLocationAll-dataset-9002', 'RD-IW-Ration-Costs-dataset-9002', 'aggregated-embark-dataset-9002', 'cosi-embark-dataset-9002', 'cosi-water-embark-dataset-9002']
+
+
+# Update the dashboard definition
+updated_dashboard_definition = update_dashboard_definition(
+    assessment_id='9002',
+    available_datasets=available_datasets,
+    sheet_map=sheet_map,
+    dashboard_definition_path=dashboard_definition_path
+)
+
+# Define the path where you want to save the file
+output_path = 'updated_dashboard_definition.json'
+
+# Save the updated dashboard definition to the specified file
+with open(output_path, 'w') as output_file:
+    json.dump(updated_dashboard_definition, output_file, indent=2)
+
+
+```
+
+#### Create Dashboard
+
+```{python}
+
+def create_custom_dashboard_from_definition(quicksight_client, aws_account_id, dashboard_id, dashboard_name, dashboard_definition):
+    try:
+        permissions = [
+            {
+                "Principal": f"arn:aws:quicksight:{region}:{aws_account_id}:user/default/quicksight",
+                "Actions": [
+                    "quicksight:DescribeDashboard",
+                    "quicksight:ListDashboardVersions",
+                    "quicksight:UpdateDashboardPermissions",
+                    "quicksight:QueryDashboard",
+                    "quicksight:UpdateDashboard",
+                    "quicksight:DeleteDashboard",
+                    "quicksight:DescribeDashboardPermissions",
+                    "quicksight:UpdateDashboardPublishedVersion"
+                ]
+            }
+        ]
+
+        # Log the dashboard creation attempt
+        logger.info(f"Attempting to create custom dashboard: {dashboard_id} in account: {aws_account_id}")
+
+        # Prepare the parameters for the create_dashboard method
+        create_dashboard_params = {
+            'AwsAccountId': aws_account_id,
+            'DashboardId': dashboard_id,
+            'Name': dashboard_name,
+            'Definition': dashboard_definition,
+            'Permissions': permissions,
+            'VersionDescription': 'Custom dashboard with selected datasets and sheets',
+            'DashboardPublishOptions': {
+                'AdHocFilteringOption': {'AvailabilityStatus': 'ENABLED'},
+                'ExportToCSVOption': {'AvailabilityStatus': 'ENABLED'},
+                'SheetControlsOption': {'VisibilityState': 'EXPANDED'}
+            }
+        }
+
+        # Call the create_dashboard method
+        response = quicksight_client.create_dashboard(**create_dashboard_params)
+
+        # Log the successful creation
+        logger.info(f"Successfully created custom dashboard: {dashboard_id}")
+        return response
+
+    except Exception as e:
+        logger.error(f"Error creating custom dashboard: {dashboard_id} in account: {aws_account_id}. Error: {e}")
+        raise
+
+
+```
+
+```{python}
+
+response = create_custom_dashboard_from_definition(
+    quicksight_client=quicksight_client,
+    aws_account_id=aws_account_id,
+    dashboard_id=new_dashboard_id,
+    dashboard_name=new_dashboard_name,
+    dashboard_definition=updated_dashboard_definition
+)
+
+# Print the response
+print(response)
+
+```
+
+```{bash}
+aws quicksight describe-dashboard-definition --dashboard-id 'RD-Assessment-9002-test9' --aws-account-id xxxxxxxxxxxx > dashboard_definition_debug.json
+```
+
+```{bash delete-dashboards}
+
+aws quicksight delete-dashboard \
+  --aws-account-id $imat_account_id \
+  --dashboard-id RD-Assessment-9002-test6 \
+  --profile quicksight
+
+```

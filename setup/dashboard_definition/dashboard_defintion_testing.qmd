@@ -1,0 +1,260 @@
+---
+title: "Dashboard Definition File Testing"
+author: "Jerome Dixon"
+execute: 
+  eval: false
+format: 
+  html: 
+    link-external-icon: true
+    link-external-newwindow: true
+    toc: true
+    toc-depth: 5
+    code-fold: true
+    code-summary: "Show the code"
+    embed-resources: true
+    default-image-extension: svg
+    dpi: 600
+    theme: cosmo
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+### R Environment
+
+```{r libraries}
+
+library(aws.s3)
+library(dplyr)
+library(readr)
+library(DT)
+library(purrr)
+library(tidyr)
+library(jsonlite)
+library(here)
+
+
+Sys.setenv(aws_profile = "quicksight")
+Sys.setenv(source_bucket = "assessments-imat")
+Sys.setenv(bucket_manifests = "assessments-manifests")
+Sys.setenv(target_bucket = "assessments-embark-joins")
+Sys.setenv(imat_account_id = "xxxxxxxxxxxx")
+Sys.setenv(aws_region = "us-east-1")
+Sys.setenv(owner_arn="arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:user/default/quicksight")
+
+```
+
+### Python Environment
+
+```{python}
+
+import os
+import json
+import logging
+import shutil
+from datetime import datetime
+import boto3
+from botocore.exceptions import ClientError
+
+# Set up logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Create a boto3 session with the specific profile
+session = boto3.Session(profile_name='quicksight')
+
+# Initialize clients
+dynamodb_client = session.client('dynamodb')
+quicksight_client = session.client('quicksight')
+
+# Configuration
+dynamodb_table = os.getenv('DYNAMODB_TABLE', 'imat-dashboard-datasets')
+aws_account_id = os.getenv('AWS_ACCOUNT_ID', 'xxxxxxxxxxxx')
+region = os.getenv('AWS_REGION', 'us-east-1')
+owner_arn = os.getenv('OWNER_ARN', 'arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:user/default/quicksight')
+
+```
+
+### Create Dashboard
+
+```{python}
+
+def create_custom_dashboard_from_definition(quicksight_client, aws_account_id, dashboard_id, dashboard_name, dashboard_definition):
+    try:
+        permissions = [
+            {
+                "Principal": f"arn:aws:quicksight:{region}:{aws_account_id}:user/default/quicksight",
+                "Actions": [
+                    "quicksight:DescribeDashboard",
+                    "quicksight:ListDashboardVersions",
+                    "quicksight:UpdateDashboardPermissions",
+                    "quicksight:QueryDashboard",
+                    "quicksight:UpdateDashboard",
+                    "quicksight:DeleteDashboard",
+                    "quicksight:DescribeDashboardPermissions",
+                    "quicksight:UpdateDashboardPublishedVersion"
+                ]
+            }
+        ]
+
+        # Log the dashboard creation attempt
+        logger.info(f"Attempting to create custom dashboard: {dashboard_id} in account: {aws_account_id}")
+
+        # Prepare the parameters for the create_dashboard method
+        create_dashboard_params = {
+            'AwsAccountId': aws_account_id,
+            'DashboardId': dashboard_id,
+            'Name': dashboard_name,
+            'Definition': dashboard_definition,
+            'Permissions': permissions,
+            'VersionDescription': 'Custom dashboard with selected datasets and sheets',
+            'DashboardPublishOptions': {
+                'AdHocFilteringOption': {'AvailabilityStatus': 'ENABLED'},
+                'ExportToCSVOption': {'AvailabilityStatus': 'ENABLED'},
+                'SheetControlsOption': {'VisibilityState': 'EXPANDED'}
+            }
+        }
+
+        # Call the create_dashboard method
+        response = quicksight_client.create_dashboard(**create_dashboard_params)
+
+        # Log the successful creation
+        logger.info(f"Successfully created custom dashboard: {dashboard_id}")
+        return response
+
+    except Exception as e:
+        logger.error(f"Error creating custom dashboard: {dashboard_id} in account: {aws_account_id}. Error: {e}")
+        raise
+
+
+```
+
+### Definition File
+
+#### Build Definition File (Manual Edit)
+
+```{bash}
+aws quicksight list-dashboards --aws-account-id xxxxxxxxxxxx --query 'DashboardSummaryList[*].[DashboardId,Name]' --output table
+
+```
+
+```{bash}
+aws quicksight describe-dashboard-definition --dashboard-id 'd0422ce1-d3e2-4d49-ab63-ab310fc6d388' --aws-account-id xxxxxxxxxxxx | jq '.Definition' > dashboard_definition.json
+```
+
+
+```{python}
+
+def read_json_file(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+            logger.info(f"Successfully read JSON from {file_path}")
+            return data
+    except FileNotFoundError:
+        logger.error(f"File not found: {file_path}")
+    except json.JSONDecodeError:
+        logger.error(f"Error decoding JSON from file: {file_path}")
+    except Exception as e:
+        logger.error(f"Error reading file {file_path}: {str(e)}")
+    return None
+
+```
+
+
+```{python}
+
+# Get the directory of the current script
+current_dir = os.path.dirname(os.path.abspath(__name__))
+
+# Path to JSON file relative to the script's location
+dashboard_definition_path = os.path.join(current_dir, 'dashboard_definition_test.json')
+
+test_dashboard_definition = read_json_file(dashboard_definition_path)
+
+print(test_dashboard_definition)
+
+```
+
+```{python}
+
+assessment_id = 'test_003'
+new_dashboard_id = f"RD-Assessment-{assessment_id}"
+new_dashboard_name = f"RD_Assessment_{assessment_id}"
+
+
+response = create_custom_dashboard_from_definition(
+    quicksight_client=quicksight_client,
+    aws_account_id=aws_account_id,
+    dashboard_id=new_dashboard_id,
+    dashboard_name=new_dashboard_name,
+    dashboard_definition=test_dashboard_definition
+)
+
+# Print the response
+print(response)
+
+```
+
+#### Build Definition File (Automated)
+
+```{python}
+
+import logging
+import boto3
+
+assessment_id = '9002'
+new_dashboard_id = f"RD-Assessment-{assessment_id}-test15"
+new_dashboard_name = f"RD_Assessment#{assessment_id}-test15"
+
+available_datasets=['AssessmentParameterDataMapTable-dataset-9002', 'AssessmentTable-dataset-9002', 'ForceFlow-joined-dataset-9002', 'Locations-dataset-9002', 'POS-dataset-9002', 'RD-I-POS-Location-dataset-9002', 'RD-I-POS-Pallet-Requirement-dataset-9002', 'RD-I-PaxLocationAll-dataset-9002', 'RD-I-Ration-Costs-dataset-9002', 'RD-IW-POS-Requirement-dataset-9002', 'RD-IW-PaxLocationAll-dataset-9002', 'RD-IW-Ration-Costs-dataset-9002', 'aggregated-embark-dataset-9002', 'cosi-embark-dataset-9002', 'cosi-water-embark-dataset-9002']
+
+
+# Update the dashboard definition
+updated_dashboard_definition = update_dashboard_definition(
+    assessment_id='9002',
+    available_datasets=available_datasets,
+    sheet_map=sheet_map,
+    dashboard_definition_path=dashboard_definition_path
+)
+
+# Define the path where you want to save the file
+output_path = 'updated_dashboard_definition.json'
+
+# Save the updated dashboard definition to the specified file
+with open(output_path, 'w') as output_file:
+    json.dump(updated_dashboard_definition, output_file, indent=2)
+
+
+```
+
+
+```{python}
+
+
+response = create_custom_dashboard_from_definition(
+    quicksight_client=quicksight_client,
+    aws_account_id=aws_account_id,
+    dashboard_id=new_dashboard_id,
+    dashboard_name=new_dashboard_name,
+    dashboard_definition=updated_dashboard_definition
+)
+
+# Print the response
+print(response)
+
+```
+
+```{bash}
+aws quicksight describe-dashboard-definition --dashboard-id 'RD-Assessment-9002-test9' --aws-account-id xxxxxxxxxxxx > dashboard_definition_debug.json
+```
+
+```{bash delete-dashboards}
+
+aws quicksight delete-dashboard \
+  --aws-account-id $imat_account_id \
+  --dashboard-id RD-Assessment-9002-test6 \
+  --profile quicksight
+
+```
+

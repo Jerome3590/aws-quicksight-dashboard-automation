@@ -1,0 +1,127 @@
+{
+  "cosi-embark-logicalTable": {
+    "Alias": "cosi_embark",
+    "DataTransforms": [
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ASSESSMENTNUMBER",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CLASS_OF_SUPPLY",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "COS_TYPE",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "REGION",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "REGION_MEF_LEAD",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "LOCATION_ID",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "LOCATION_NAME",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UI",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "POS",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "QTY",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "PALLETS",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UNITS_PALLET_TOT_CUFT",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UNITS_PALLET_TOT_TEUS",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UNITS_PALLET_TOT_WT.LBS.",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "TOTAL_COST",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "ProjectOperation": {
+          "ProjectedColumns": [
+            "ASSESSMENTNUMBER",
+            "CLASS_OF_SUPPLY",
+            "COS_TYPE",
+            "REGION",
+            "REGION_MEF_LEAD",
+            "LOCATION_ID",
+            "LOCATION_NAME",
+            "UI",
+            "POS",
+            "QTY",
+            "PALLETS",
+            "UNITS_PALLET_TOT_CUFT",
+            "UNITS_PALLET_TOT_TEUS",
+            "UNITS_PALLET_TOT_WT.LBS.",
+            "TOTAL_COST"
+          ]
+        }
+      }
+    ],
+    "Source": {
+      "PhysicalTableId": "cosi-embark-physicalTable"
+    }
+  }
+}

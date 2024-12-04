@@ -1,0 +1,593 @@
+{
+    "Status": 200,
+    "DataSet": {
+        "Arn": "arn:aws:quicksight:us-east-1:548995328310:dataset/cosix-embark-dataset-template",
+        "DataSetId": "cosix-embark-dataset-template",
+        "Name": "cosix_embark_dataset_template",
+        "CreatedTime": "2024-11-17T14:49:37.010000-05:00",
+        "LastUpdatedTime": "2024-11-17T14:49:37.010000-05:00",
+        "PhysicalTableMap": {
+            "cosix-embark-physicalTable": {
+                "S3Source": {
+                    "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/cosix-embark-datasource-template",
+                    "UploadSettings": {
+                        "Format": "CSV",
+                        "StartFromRow": 1,
+                        "ContainsHeader": true,
+                        "TextQualifier": "DOUBLE_QUOTE",
+                        "Delimiter": ","
+                    },
+                    "InputColumns": [
+                        {
+                            "Name": "ASSESSMENTNUMBER",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CLASS_OF_SUPPLY",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "REGION",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "MEF",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "LOCATION_NAME",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TAMCN_NIIN",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TAMCN_OF_END_ITEM",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "NIIN_OF_END_ITEM",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "COLLOQUIAL_NAME",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TAMCN_NIIN_QTY_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "FSC.OF.PART.REQUIRED",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "NIIN",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "NOMENCLATURE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UI",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "UNIT_PRICE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DIM.LENGTH.INCHES",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DIM.WIDTH.INCHES",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DIM.HEIGHT.INCHES",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DSS_WEIGHT",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DSS_CUBE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "FEATURE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "REQUIRED_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "FIE_CUFT",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "FIE_SQFT",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "FIE_WEIGHT_LBS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "COST_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "POS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "REQUIREMENT",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "CUFT",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "SQFT",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "WEIGHT_LBS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TOTAL_COST_LESS_FIE",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "TOTAL_COST",
+                            "Type": "STRING"
+                        }
+                    ]
+                }
+            }
+        },
+        "LogicalTableMap": {
+            "cosix-embark-logicalTable": {
+                "Alias": "cosix_embark",
+                "DataTransforms": [
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "ASSESSMENTNUMBER",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "CLASS_OF_SUPPLY",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "REGION",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "MEF",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "FIE",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "LOCATION_NAME",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TAMCN_NIIN",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TAMCN_OF_END_ITEM",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "NIIN_OF_END_ITEM",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "COLLOQUIAL_NAME",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TAMCN_NIIN_QTY_FIE",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "FSC.OF.PART.REQUIRED",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "NIIN",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "NOMENCLATURE",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UI",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "UNIT_PRICE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DIM.LENGTH.INCHES",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DIM.WIDTH.INCHES",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DIM.HEIGHT.INCHES",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DSS_WEIGHT",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DSS_CUBE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "FEATURE",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "REQUIRED_FIE",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "FIE_CUFT",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "FIE_SQFT",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "FIE_WEIGHT_LBS",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "COST_FIE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "POS",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "REQUIREMENT",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "CUFT",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "SQFT",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "WEIGHT_LBS",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TOTAL_COST_LESS_FIE",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "TOTAL_COST",
+                            "NewColumnType": "DECIMAL",
+                            "SubType": "FIXED"
+                        }
+                    },
+                    {
+                        "ProjectOperation": {
+                            "ProjectedColumns": [
+                                "ASSESSMENTNUMBER",
+                                "CLASS_OF_SUPPLY",
+                                "REGION",
+                                "MEF",
+                                "FIE",
+                                "LOCATION_NAME",
+                                "TAMCN_NIIN",
+                                "TAMCN_OF_END_ITEM",
+                                "NIIN_OF_END_ITEM",
+                                "COLLOQUIAL_NAME",
+                                "TAMCN_NIIN_QTY_FIE",
+                                "FSC.OF.PART.REQUIRED",
+                                "NIIN",
+                                "NOMENCLATURE",
+                                "UI",
+                                "UNIT_PRICE",
+                                "DIM.LENGTH.INCHES",
+                                "DIM.WIDTH.INCHES",
+                                "DIM.HEIGHT.INCHES",
+                                "DSS_WEIGHT",
+                                "DSS_CUBE",
+                                "FEATURE",
+                                "REQUIRED_FIE",
+                                "FIE_CUFT",
+                                "FIE_SQFT",
+                                "FIE_WEIGHT_LBS",
+                                "COST_FIE",
+                                "POS",
+                                "REQUIREMENT",
+                                "CUFT",
+                                "SQFT",
+                                "WEIGHT_LBS",
+                                "TOTAL_COST_LESS_FIE",
+                                "TOTAL_COST"
+                            ]
+                        }
+                    }
+                ],
+                "Source": {
+                    "PhysicalTableId": "cosix-embark-physicalTable"
+                }
+            }
+        },
+        "OutputColumns": [
+            {
+                "Name": "ASSESSMENTNUMBER",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "CLASS_OF_SUPPLY",
+                "Type": "STRING"
+            },
+            {
+                "Name": "REGION",
+                "Type": "STRING"
+            },
+            {
+                "Name": "MEF",
+                "Type": "STRING"
+            },
+            {
+                "Name": "FIE",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "LOCATION_NAME",
+                "Type": "STRING"
+            },
+            {
+                "Name": "TAMCN_NIIN",
+                "Type": "STRING"
+            },
+            {
+                "Name": "TAMCN_OF_END_ITEM",
+                "Type": "STRING"
+            },
+            {
+                "Name": "NIIN_OF_END_ITEM",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "COLLOQUIAL_NAME",
+                "Type": "STRING"
+            },
+            {
+                "Name": "TAMCN_NIIN_QTY_FIE",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "FSC.OF.PART.REQUIRED",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "NIIN",
+                "Type": "STRING"
+            },
+            {
+                "Name": "NOMENCLATURE",
+                "Type": "STRING"
+            },
+            {
+                "Name": "UI",
+                "Type": "STRING"
+            },
+            {
+                "Name": "UNIT_PRICE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "DIM.LENGTH.INCHES",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "DIM.WIDTH.INCHES",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "DIM.HEIGHT.INCHES",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "DSS_WEIGHT",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "DSS_CUBE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "FEATURE",
+                "Type": "STRING"
+            },
+            {
+                "Name": "REQUIRED_FIE",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "FIE_CUFT",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "FIE_SQFT",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "FIE_WEIGHT_LBS",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "COST_FIE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "POS",
+                "Type": "STRING"
+            },
+            {
+                "Name": "REQUIREMENT",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "CUFT",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "SQFT",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "WEIGHT_LBS",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "TOTAL_COST_LESS_FIE",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            },
+            {
+                "Name": "TOTAL_COST",
+                "Type": "DECIMAL",
+                "SubType": "FIXED"
+            }
+        ],
+        "ImportMode": "SPICE",
+        "ConsumedSpiceCapacityInBytes": 0,
+        "DataSetUsageConfiguration": {
+            "DisableUseAsDirectQuerySource": false,
+            "DisableUseAsImportedSource": false
+        }
+    },
+    "RequestId": "a075603d-18f7-4fe0-9121-cfe6e706dc1a"
+}

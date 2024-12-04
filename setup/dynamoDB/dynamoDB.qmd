@@ -1,0 +1,393 @@
+---
+title: "DynamoDB Streams for Event Driven Processing"
+author: "Jerome Dixon"
+execute: 
+  eval: false
+format: 
+  html: 
+    link-external-icon: true
+    link-external-newwindow: true
+    toc: true
+    toc-depth: 5
+    code-fold: true
+    code-summary: "Show the code"
+    embed-resources: true
+    default-image-extension: svg
+    dpi: 600
+    theme: cosmo
+---
+
+### Environment
+
+```{r libraries}
+
+library(aws.s3)
+library(dplyr)
+library(readr)
+library(DT)
+library(purrr)
+library(tidyr)
+library(jsonlite)
+library(here)
+
+
+Sys.setenv(aws_profile = "quicksight")
+Sys.setenv(source_bucket = "assessments-imat")
+Sys.setenv(wrsa_bucket = "{bucket_name}")
+Sys.setenv(bucket_manifests = "assessments-manifests")
+Sys.setenv(target_bucket = "assessments-embark-joins")
+Sys.setenv(imat_account_id = "xxxxxxxxxxxx")
+Sys.setenv(aws_region = "us-east-1")
+Sys.setenv(owner_arn="arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:user/default/quicksight")
+
+```
+
+Example Pricing:
+Streams Read Request Unit: $0.02 per 1 million read request units.
+Streams Write Request Unit: $0.05 per 1 million write request units.
+
+
+### DynamoDB Table to manage 'state'
+
+```{bash}
+
+aws dynamodb create-table \
+    --table-name imat-dashboard-datasets \
+    --attribute-definitions \
+        AttributeName=assessment_id,AttributeType=S \
+        AttributeName=dataset_id,AttributeType=S \
+    --key-schema \
+        AttributeName=assessment_id,KeyType=HASH \
+        AttributeName=dataset_id,KeyType=RANGE \
+    --provisioned-throughput \
+        ReadCapacityUnits=5,WriteCapacityUnits=5 \
+    --profile quicksight
+
+
+```
+
+#### DyanamoDB Table Update for Streams
+
+```{bash}
+
+# Enable DynamoDB Streams
+aws dynamodb update-table \
+    --table-name imat-dashboard-datasets \
+    --stream-specification StreamEnabled=true,StreamViewType=NEW_AND_OLD_IMAGES \
+    --profile quicksight
+
+
+```
+
+
+#### Stream Setup
+
+```{bash}
+
+# Get the Stream ARN
+STREAM_ARN=$(aws dynamodb describe-table --table-name imat-dashboard-datasets --query "Table.LatestStreamArn" --output text --profile quicksight)
+echo $STREAM_ARN
+
+```
+
+```{bash}
+
+STREAM_ARN=$(aws dynamodb describe-table --table-name imat-dashboard-datasets --query "Table.LatestStreamArn" --output text --profile quicksight)
+
+# Create event source mapping
+aws lambda create-event-source-mapping \
+    --function-name ddb-dashboard-processor \
+    --event-source-arn $STREAM_ARN \
+    --starting-position LATEST \
+    --profile quicksight
+
+```
+
+- Output
+
+```{json}
+{
+    "UUID": "ad8934ed-822a-466c-af44-c1f3bb2adbb5",
+    "StartingPosition": "LATEST",
+    "BatchSize": 100,
+    "MaximumBatchingWindowInSeconds": 0,
+    "ParallelizationFactor": 1,
+    "EventSourceArn": "arn:aws:dynamodb:us-east-1:xxxxxxxxxxxx:table/imat-dashboard-datasets/stream/2024-07-31T20:40:23.377",
+    "FunctionArn": "arn:aws:lambda:us-east-1:xxxxxxxxxxxx:function:ddb-dashboard-processor",
+    "LastModified": "2024-07-31T16:42:12.415000-04:00",
+    "LastProcessingResult": "No records processed",
+    "State": "Creating",
+    "StateTransitionReason": "User action",
+    "DestinationConfig": {
+        "OnFailure": {}
+    },
+    "MaximumRecordAgeInSeconds": -1,
+    "BisectBatchOnFunctionError": false,
+    "MaximumRetryAttempts": -1,
+    "TumblingWindowInSeconds": 0,
+    "FunctionResponseTypes": []
+}
+
+```
+
+
+### Stream Filter
+
+![DynamoDB Stream Event Filter](../../README/stream_filter.png)
+
+
+### Custom Lambda Trigger Event Filters - AWS Console
+
+- Embark Processor
+
+```{json}
+
+{ "dynamodb": { "NewImage": { "Status": { "S": ["File_Received"] } } } }
+
+```
+
+- Embark Aggregator
+
+```{json}
+
+{ "dynamodb": { "NewImage": { "Status": { "S": ["Dataset_Created"] } } } }
+
+```
+
+- Datasets Synced
+
+```{json}
+
+{ "dynamodb": { "NewImage": { "Status": { "S": ["DATASETS_SYNCED!"] } } } }
+
+```
+
+
+- Dashboard trigger for when all datasets are available
+
+```{json}
+
+{
+"dynamodb" : { 
+        "Keys" : { 
+            "dataset_id" : { 
+                "S" : [ 
+                    {"prefix":"aggregated-embark"} 
+                ] 
+            } 
+        } 
+    }, 
+    "dynamodb": { 
+        "NewImage": { 
+            "Status": { 
+                "S": [ 
+                    "Dataset_Created" 
+                ] 
+            } 
+        } 
+    } 
+}
+
+```
+
+
+```{bash}
+
+aws dynamodb describe-table --table-name imat-dashboard-datasets \
+  --profile quicksight
+
+```
+
+### Queries
+
+```{python}
+
+import boto3
+from boto3.dynamodb.conditions import Key, Attr
+
+# Initialize a session using Amazon DynamoDB
+dynamodb_resource = boto3.resource('dynamodb', region_name='us-east-1')
+
+table = dynamodb_resource.Table('imat-dashboard-datasets')
+
+
+```
+
+
+```{python}
+
+assessment_id = '20200215441'
+dataset_id = f'AssessmentParameterDataMapTable-dataset-{assessment_id}'
+
+# Query to get all items with a specific assessment_id and filtering by status
+response = table.query(
+    KeyConditionExpression=Key('assessment_id').eq(assessment_id) & Key('dataset_id').eq(f'{dataset_id}'),
+    FilterExpression=Attr('Dataset_Created').exists()
+)
+
+items = response.get('Items', [])
+for item in items:
+    print(f"Dataset ID: {item['dataset_id']}, Dataset Created: {item['Dataset_Created']}, Datasource Created: {item['Datasource_Created']}")
+
+
+```
+
+### Final DynamoDB Query Logic for Validating AWS S3/DynamoDB Dataset Sync
+
+```{python}
+
+import json
+import boto3
+from boto3.dynamodb.conditions import Key, Attr
+import logging
+
+# Initialize the logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# AWS clients initialization
+s3_client = boto3.client('s3')
+dynamodb_resource = boto3.resource('dynamodb', region_name='us-east-1')
+
+assessment_id = '20200215441'
+
+
+def construct_dataset_id(object_key, assessment_id):
+    file_name = object_key.split("/")[-1]
+    file_name_without_ext = file_name.rsplit('.', 1)[0]
+    file_id = file_name_without_ext.replace('_', '-')
+    dataset_id = f'{file_id}-dataset-{assessment_id}'
+    return dataset_id
+
+
+def check_s3_object(bucket_name, object_key, assessment_id):
+    """Check if the S3 object exists, return the dataset_id if object_key found."""
+    try:
+        s3_client.head_object(Bucket=bucket_name, Key=object_key)
+        s3_dataset_id = construct_dataset_id(object_key, assessment_id)
+        return s3_dataset_id
+    except s3_client.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == '404':
+            logger.warning(f'Object {object_key} not found in bucket {bucket_name}')
+            return None
+        else:
+            raise
+
+
+def check_dynamodb_object(dynamodb_table, dataset_id, assessment_id):
+    """Query DynamoDB for the dataset_id under the specified assessment_id."""
+    try:
+        table = dynamodb_resource.Table(dynamodb_table)
+        response = table.query(
+            KeyConditionExpression=Key('assessment_id').eq(f'{assessment_id}') & Key('dataset_id').eq(f'{dataset_id}'),
+            FilterExpression=Attr('Dataset_Created').exists()
+        )
+
+        logger.info(f"DynamoDB response: {response}")
+
+        if 'Items' in response and len(response['Items']) > 0:
+            dynamodb_dataset_id = response['Items'][0].get('dataset_id')
+            if dynamodb_dataset_id:
+                logger.info(f"Extracted dataset_id from DynamoDB: {dynamodb_dataset_id}")
+                return dynamodb_dataset_id
+            else:
+                logger.warning(f"No dataset_id found in DynamoDB for assessment_id: {assessment_id} and dataset_id: {dataset_id}")
+                return None
+        else:
+            logger.warning(f"No items found in DynamoDB for assessment_id: {assessment_id} and dataset_id: {dataset_id}")
+            return None
+
+    except Exception as e:
+        logger.error(f"An error occurred while querying DynamoDB: {e}")
+        return None
+
+
+def check_all_embark_keys_against_dynamodb(assessment_id, s3_client, dynamodb_resource, dynamodb_table):
+    """Check all embark S3 keys against DynamoDB dataset_ids."""
+    lookup_table = {
+        f"s3://{bucket_name}/assessments/{assessment_id}/cos-calculators/AssessmentParameterDataMapTable.csv": f"AssessmentParameterDataMapTable-dataset-{assessment_id}",
+        f"s3://{bucket_name}/assessments/{assessment_id}/cos-calculators/AssessmentTable.csv": f"AssessmentTable-dataset-{assessment_id}",
+        f"s3://{bucket_name}/assessments/{assessment_id}/cosi_embark.csv": f"cosi-embark-dataset-{assessment_id}",
+        f"s3://{bucket_name}/assessments/{assessment_id}/cosi_water_embark.csv": f"cosi-water-embark-dataset-{assessment_id}",
+        f"s3://{bucket_name}/assessments/{assessment_id}/cosii_vii_embark.csv": f"cosii-vii-embark-dataset-{assessment_id}",
+        f"s3://{bucket_name}/assessments/{assessment_id}/cosiiip_embark.csv": f"cosiiip-embark-dataset-{assessment_id}",
+        f"s3://{bucket_name}/assessments/{assessment_id}/cosiv_embark.csv": f"cosiv-embark-dataset-{assessment_id}",
+        f"s3://{bucket_name}/assessments/{assessment_id}/cosvi_embark.csv": f"cosvi-embark-dataset-{assessment_id}",
+        f"s3://{bucket_name}/assessments/{assessment_id}/cosix_embark.csv": f"cosix-embark-dataset-{assessment_id}",
+        f"s3://{bucket_name}/assessments/{assessment_id}/ForceFlow_joined.csv": f"ForceFlow-joined-dataset-{assessment_id}",
+        f"s3://{bucket_name}/assessments/{assessment_id}/RD_I_POS_Location_joined.csv": f"RD-I-POS-Location-joined-dataset-{assessment_id}",
+        f"s3://{bucket_name}/assessments/{assessment_id}/RD_I_Ration_Costs_joined.csv": f"RD-I-Ration-Costs-joined-dataset-{assessment_id}",
+        f"s3://{bucket_name}/assessments/{assessment_id}/RD_IW_PaxLocationAll_joined.csv": f"RD-IW-PaxLocationAll-joined-dataset-{assessment_id}",
+        f"s3://{bucket_name}/assessments/{assessment_id}/RD_IW_Ration_Costs_joined.csv": f"RD-IW-Ration-Costs-joined-dataset-{assessment_id}",
+        f"s3://{bucket_name}/assessments/{assessment_id}/cos-calculators/cos-i-water/output/RD_IW_POS_Requirement.csv": f"RD-IW-POS-Requirement-dataset-{assessment_id}",
+        f"s3://{bucket_name}/assessments/{assessment_id}/cos-calculators/cos-ii-vii/output/RD_II_VII_DailyTE_WithDimensions.csv": f"RD-II-VII-DailyTE-WithDimensions-dataset-{assessment_id}"
+    }
+
+    matched_keys = []
+    missing_dynamodb_matches = []
+
+    try:
+        for s3_uri, dataset_id in lookup_table.items():
+            s3_path = s3_uri.replace("s3://", "")
+            bucket_name, object_key = s3_path.split('/', 1)
+
+            try:
+                # Check S3 Object
+                s3_dataset_id = check_s3_object(bucket_name, object_key, assessment_id)
+                if not s3_dataset_id:
+                    missing_dynamodb_matches.append((s3_uri, dataset_id))
+                    continue
+
+                # Check DynamoDB Object
+                dynamodb_dataset_id = check_dynamodb_object(dynamodb_table, dataset_id, assessment_id)
+
+                if s3_dataset_id == dynamodb_dataset_id:
+                    matched_keys.append((s3_dataset_id, dataset_id))
+                    logger.info(f"Matched: S3 key {s3_dataset_id} with DynamoDB dataset_id: {dataset_id}")
+                else:
+                    missing_dynamodb_matches.append((s3_uri, dataset_id))
+                    logger.warning(f"No match found in DynamoDB for S3 key {s3_uri} and dataset_id {dataset_id}")
+
+            except s3_client.exceptions.NoSuchKey:
+                missing_dynamodb_matches.append((s3_uri, dataset_id))
+                logger.warning(f"S3 object not found: {s3_uri}")
+
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
+
+    finally:
+        if matched_keys:
+            logger.info(f"Matched S3 keys: {matched_keys}")
+        if missing_dynamodb_matches:
+            logger.warning(f"S3 objects with no DynamoDB matches: {missing_dynamodb_matches}")
+
+    return {
+        "matched_keys": matched_keys,
+        "missing_dynamodb_matches": missing_dynamodb_matches
+    }
+
+
+def lambda_handler(event, context):
+    dynamodb_table = 'imat-dashboard-datasets'
+
+    result = check_all_embark_keys_against_dynamodb(
+        assessment_id, s3_client, dynamodb_resource, dynamodb_table
+    )
+    
+    # Log the length of matched keys
+    matched_length = len(result.get('matched_keys', []))
+    logger.info(f"Number of matched Datasets: {matched_length}")
+    
+    # Log the length of matched keys
+    unmatched_length = len(result.get('missing_dynamodb_matches', []))
+    logger.info(f"Number of missing DynamoDB Datasets: {unmatched_length}")
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps(result)
+    }
+
+
+```
+
+

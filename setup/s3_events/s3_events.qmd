@@ -1,0 +1,317 @@
+---
+title: "AWS S3 Event Triggers"
+author: "Jerome Dixon"
+execute: 
+  eval: false
+format: 
+  html: 
+    link-external-icon: true
+    link-external-newwindow: true
+    toc: true
+    toc-depth: 5
+    code-fold: true
+    code-summary: "Show the code"
+    embed-resources: true
+    default-image-extension: svg
+    dpi: 600
+    theme: superhero
+---
+
+```{r libraries}
+
+library(aws.s3)
+library(dplyr)
+library(jsonlite)
+library(here)
+
+
+
+Sys.setenv(bucket_assessments = "assessments-imat")
+Sys.setenv(bucket_manifests = "assessments-manifests")
+Sys.setenv(bucket_wrsa_dev = "{bucket_name}")
+Sys.setenv(bucket_embarks = "assessments-embarks-joins")
+
+Sys.setenv(lambda_message_router_arn = "arn:aws:lambda:us-east-1:xxxxxxxxxxxx:function:imat-message-router")
+Sys.setenv(aws_region = "us-east-1")
+
+```
+
+### AWS S3 Event Trigger #1: Assessment Bucket (Test)
+
+- On all bucket changes - large files have multipart uploads
+
+```{bash}
+
+lambda_arn=$lambda_message_router_arn
+
+# Create a JSON file to hold the notification configuration
+echo '{"LambdaFunctionConfigurations":[' > s3_assessment_notification.json
+
+# List all the suffix keys
+suffix_keys=(
+    "AssessmentTable.csv"
+    "AssessmentParameterDataMapTable.csv"
+    "Locations.csv"
+    "RD_I_PaxLocationAll.csv"
+    "RD_I_POS_Location.csv"
+    "RD_I_Ration_Costs.csv"
+    "RD_I_POS_Pallet_Requirement.csv"
+    "RD_IW_PaxLocationAll.csv"
+    "RD_IW_Ration_Costs.csv"
+    "RD_IW_POS_Requirement.csv"
+    "RD_II_VII_DailyTE_WithDimensions.csv"
+    "RD_IIIP_POL_Pkg_NSN_Requirements_PBI.csv"
+    "RD_II_ICCE_DailyTE.csv"
+    "RD_IV_Daily_Requirements.csv"
+    "RD_VI_POS_Pallet_Requirement.csv"
+    "RD_IX_Requirement.csv"
+    "_RD_I__Input.zip"
+)
+
+# Create a notification configuration for each suffix key
+first=true
+for key in "${suffix_keys[@]}"; do
+    if [ "$first" = true ]; then
+        first=false
+    else
+        echo ',' >> s3_assessment_notification.json
+    fi
+    cat << EOF >> s3_assessment_notification.json
+    {
+        "LambdaFunctionArn": "$lambda_arn",
+        "Events": ["s3:ObjectCreated:*"],
+        "Filter": {
+            "Key": {
+                "FilterRules": [
+                    {
+                        "Name": "suffix",
+                        "Value": "$key"
+                    }
+                ]
+            }
+        }
+    }
+EOF
+done
+
+echo ']}' >> s3_assessment_notification.json
+
+```
+
+- Create initial event trigger via AWS Lambda console first to update lambda function with required resource IAM policy
+
+![AWS Lambda Console - Event Trigger](../../README/lambda_console_event_trigger.png)
+
+
+```{bash}
+
+# Apply the notification configuration to the bucket
+aws s3api put-bucket-notification-configuration --bucket $bucket_assessments --notification-configuration file://s3_assessment_notification.json --profile quicksight
+
+
+echo "Notifications have been configured for all specified files."
+
+
+```
+
+![AWS S3 Properties Console - Final Event Trigger](../../README/s3_trigger_file_filter.png)
+
+### - Due to file size and file a multippart upload we edit event trigger for RD_IX_Requirment.csv
+
+![Edit - Event Trigger](../../README/rd_ix_s3_event_trigger.png)
+
+
+### AWS S3 Event Trigger #2: Embark Bucket
+
+```{bash}
+
+lambda_arn=$lambda_message_router_arn
+
+# Create a JSON file to hold the notification configuration
+echo '{"LambdaFunctionConfigurations":[' > embark_join_notification.json
+
+# List all the suffix keys
+embark_join_suffix_keys=(
+    "aggregated_embark.csv",
+    "cosi_embark.csv"
+    "cosi_water_embark.csv"
+    "cosii_vii_embark.csv"
+    "cosiiip_embark.csv"
+    "cosiv_embark.csv"
+    "cosvi_embark.csv"
+    "cosix_embark.csv"
+    "ForceFlow_joined.csv"
+    "POS.csv"
+)
+
+# Create a notification configuration for each suffix key
+first=true
+for key in "${embark_join_suffix_keys[@]}"; do
+    if [ "$first" = true ]; then
+        first=false
+    else
+        echo ',' >> embark_join_notification.json
+    fi
+    cat << EOF >> embark_join_notification.json
+    {
+        "LambdaFunctionArn": "$lambda_arn",
+        "Events": ["s3:ObjectCreated:*"],
+        "Filter": {
+            "Key": {
+                "FilterRules": [
+                    {
+                        "Name": "suffix",
+                        "Value": "$key"
+                    }
+                ]
+            }
+        }
+    }
+EOF
+done
+
+echo ']}' >> embark_join_notification.json
+
+```
+
+
+```{bash}
+
+# Apply the notification configuration to the bucket
+aws s3api put-bucket-notification-configuration --bucket $bucket_embarks --notification-configuration file://embark_join_notification.json --profile quicksight
+
+
+echo "Notifications have been configured for all specified files."
+
+
+```
+
+
+### AWS S3 Event Trigger #1: Assessment Bucket (Live)
+
+#### Update Lambda Function IAM Policy
+
+```{.json}
+{
+  "Version": "2012-10-17",
+  "Id": "imat-cross-account-s3",
+  "Statement": [
+    {
+      "Sid": "s3invoke",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "s3.amazonaws.com"
+      },
+      "Action": "lambda:InvokeFunction",
+      "Resource": "arn:aws:lambda:us-east-1:xxxxxxxxxxxx:function:imat-message-router",
+      "Condition": {
+        "StringEquals": {
+          "AWS:SourceAccount": "689967901690"
+        },
+        "ArnLike": {
+          "AWS:SourceArn": "arn:aws:s3:::{bucket_name}"
+        }
+      }
+    }
+  ]
+}
+```
+
+#### Lambda Execution Role
+
+```{.json}
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:PutLogEvents",
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream"
+            ],
+            "Resource": "arn:aws:logs:*:*:*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject"
+            ],
+            "Resource": "arn:aws:s3:::{bucket_name}/*"
+        }
+    ]
+}
+
+```
+
+
+- On all bucket changes - large files have multipart uploads
+
+```{bash}
+
+lambda_arn='arn:aws:lambda:us-east-1:689967901690:function:imat-preprocessor'
+
+# Create a JSON file to hold the notification configuration
+echo '{"LambdaFunctionConfigurations":[' > assessment_notification.json
+
+# List all the suffix keys
+suffix_keys=(
+    "AssessmentTable.csv"
+    "AssessmentParameterDataMapTable.csv"
+    "Locations.csv"
+    "RD_I_PaxLocationAll.csv"
+    "RD_I_POS_Location.csv"
+    "RD_I_Ration_Costs.csv"
+    "RD_I_POS_Pallet_Requirement.csv"
+    "RD_IW_PaxLocationAll.csv"
+    "RD_IW_Ration_Costs.csv"
+    "RD_IW_POS_Requirement.csv"
+    "RD_II_VII_DailyTE_WithDimensions.csv"
+    "RD_IIIP_POL_Pkg_NSN_Requirements_PBI.csv"
+    "RD_II_ICCE_DailyTE.csv"
+    "RD_IV_Daily_Requirements.csv"
+    "RD_VI_POS_Pallet_Requirement.csv"
+    "RD_IX_Requirement.csv"
+    "_RD_I__Input.zip"
+)
+
+# Create a notification configuration for each suffix key
+first=true
+for key in "${suffix_keys[@]}"; do
+    if [ "$first" = true ]; then
+        first=false
+    else
+        echo ',' >> assessment_notification.json
+    fi
+    cat << EOF >> assessment_notification.json
+    {
+        "LambdaFunctionArn": "$lambda_arn",
+        "Events": ["s3:ObjectCreated:*"],
+        "Filter": {
+            "Key": {
+                "FilterRules": [
+                    {
+                        "Name": "suffix",
+                        "Value": "$key"
+                    }
+                ]
+            }
+        }
+    }
+EOF
+done
+
+echo ']}' >> assessment_notification.json
+
+```
+
+```{bash}
+
+# Apply the notification configuration to the bucket
+aws s3api put-bucket-notification-configuration --bucket '{bucket_name}' --notification-configuration file://assessment_notification.json --profile cana
+
+
+echo "Notifications have been configured for all specified files."
+
+
+```

@@ -1,0 +1,126 @@
+{
+    "Status": 200,
+    "DataSet": {
+        "Arn": "arn:aws:quicksight:us-east-1:548995328310:dataset/POS-dataset-template",
+        "DataSetId": "POS-dataset-template",
+        "Name": "POS_dataset_template",
+        "CreatedTime": "2024-08-04T00:38:37.768000-04:00",
+        "LastUpdatedTime": "2024-08-04T00:38:51.557000-04:00",
+        "PhysicalTableMap": {
+            "POS-physicalTable": {
+                "S3Source": {
+                    "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/POS-datasource-template",
+                    "UploadSettings": {
+                        "Format": "CSV",
+                        "StartFromRow": 1,
+                        "ContainsHeader": true,
+                        "TextQualifier": "DOUBLE_QUOTE",
+                        "Delimiter": ","
+                    },
+                    "InputColumns": [
+                        {
+                            "Name": "X",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "POS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "DOS",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Period",
+                            "Type": "STRING"
+                        },
+                        {
+                            "Name": "Sort_Index",
+                            "Type": "STRING"
+                        }
+                    ]
+                }
+            }
+        },
+        "LogicalTableMap": {
+            "POS-logicalTable": {
+                "Alias": "POS_template",
+                "DataTransforms": [
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "X",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "POS",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "DOS",
+                            "NewColumnType": "STRING"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Period",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "CastColumnTypeOperation": {
+                            "ColumnName": "Sort_Index",
+                            "NewColumnType": "INTEGER"
+                        }
+                    },
+                    {
+                        "ProjectOperation": {
+                            "ProjectedColumns": [
+                                "X",
+                                "POS",
+                                "DOS",
+                                "Period",
+                                "Sort_Index"
+                            ]
+                        }
+                    }
+                ],
+                "Source": {
+                    "PhysicalTableId": "POS-physicalTable"
+                }
+            }
+        },
+        "OutputColumns": [
+            {
+                "Name": "X",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "POS",
+                "Type": "STRING"
+            },
+            {
+                "Name": "DOS",
+                "Type": "STRING"
+            },
+            {
+                "Name": "Period",
+                "Type": "INTEGER"
+            },
+            {
+                "Name": "Sort_Index",
+                "Type": "INTEGER"
+            }
+        ],
+        "ImportMode": "SPICE",
+        "ConsumedSpiceCapacityInBytes": 372,
+        "DataSetUsageConfiguration": {
+            "DisableUseAsDirectQuerySource": false,
+            "DisableUseAsImportedSource": false
+        }
+    },
+    "RequestId": "8a6aef34-ae0e-4e97-8440-b3f9a1458eb0"
+}

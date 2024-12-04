@@ -1,0 +1,12 @@
+FROM public.ecr.aws/lambda/python:3.12
+
+# Set working directory to the Lambda task root
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+# Install the specified packages
+RUN pip install boto3==1.34.149 pandas==2.2.2 --target "${LAMBDA_TASK_ROOT}"
+
+# Copy function code
+COPY step_embark_agg_lambda.py .
+
+CMD [ "step_embark_agg_lambda.lambda_handler" ]

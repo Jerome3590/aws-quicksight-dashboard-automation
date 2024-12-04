@@ -1,0 +1,124 @@
+{
+  "ForceFlow-joined-physicalTable": {
+    "S3Source": {
+      "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/ForceFlow-joined-datasource-template",
+      "UploadSettings": {
+        "Format": "CSV",
+        "StartFromRow": 1,
+        "ContainsHeader": true,
+        "TextQualifier": "DOUBLE_QUOTE",
+        "Delimiter": ","
+      },
+      "InputColumns": [
+        {
+          "Name": "AssessmentNumber",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Class_of_Supply",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UIC",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Flowin",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Cumflow",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Location_Name",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Location_ID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Region",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Region_MEF_Lead",
+          "Type": "STRING"
+        },
+        {
+          "Name": "MEF",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Service",
+          "Type": "STRING"
+        },
+        {
+          "Name": "MSE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Day",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Feed_Plan_ID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "MEALS_READY_TO_EAT_MRE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UGR_H_S_BREAKFAST",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UGR_H_S_LUNCH_DINNER",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UGR_M_BREAKFAST",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UGR_M_LUNCH_DINNER",
+          "Type": "STRING"
+        },
+        {
+          "Name": "DOS_Period",
+          "Type": "STRING"
+        },
+        {
+          "Name": "POS",
+          "Type": "STRING"
+        },
+        {
+          "Name": "DOS",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Period",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Sort_Index",
+          "Type": "STRING"
+        },
+        {
+          "Name": "OperationDuration",
+          "Type": "STRING"
+        },
+        {
+          "Name": "daily_Inflow",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Cumulative_Daily_Inflow",
+          "Type": "STRING"
+        }
+      ]
+    }
+  }
+}

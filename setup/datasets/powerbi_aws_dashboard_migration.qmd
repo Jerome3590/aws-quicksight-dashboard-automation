@@ -1,0 +1,1314 @@
+---
+title: "PowerBI Dashboard Migration to AWS QuickSight - Dataset Setup"
+author: "Jerome Dixon"
+format: 
+  html: 
+    link-external-icon: true
+    link-external-newwindow: true
+    toc: true
+    toc-depth: 5
+    code-fold: true
+    code-summary: "Show the code"
+    embed-resources: true
+    default-image-extension: svg
+    dpi: 600
+    theme: superhero
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+## Environment
+
+```{r libraries}
+
+library(aws.s3)
+library(dplyr)
+library(readr)
+library(DT)
+library(purrr)
+library(tidyr)
+library(jsonlite)
+library(stringr)
+library(here)
+library(reticulate)
+
+```
+
+```{r eval=FALSE}
+
+# For bash scripts
+Sys.setenv(assessment_id = "template")
+Sys.setenv(wrsa_bucket = "{bucket_name}")
+Sys.setenv(wrsa_account_id = "xxxxxxxxxxxx")
+Sys.setenv(imat_account_id = "xxxxxxxxxxxx")
+Sys.setenv(bucket_manifests = "assessments-manifests")
+Sys.setenv(preprocessor_table_maps = "table-maps-quicksight")
+Sys.setenv(processor_table_maps = "imat-table-map--use1-az6--x-s3")
+Sys.setenv(owner_arn="arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:user/default/quicksight")
+Sys.setenv(target_bucket = "assessments-embarks-joins")
+Sys.setenv(source_bucket = "assessments-imat")
+Sys.setenv(aws_region = "us-east-1")
+
+assessment_id <- Sys.getenv("assessment_id")
+
+```
+
+### Assessment (Template)
+
+#### Find Example Assessment
+
+```{bash most-recent-assessment, eval=FALSE}
+
+# Define the S3 bucket and profile
+bucket_assessments=$bucket_assessment
+profile="quicksight"
+
+# Get the current date and date three months ago in the correct format
+current_date=$(date +%Y-%m-%d)
+three_months_ago=$(date -d "$current_date - 3 months" +%Y-%m-%d)
+
+# List all folders in the 'assessments' directory
+folder_list=$(aws s3 ls "s3://$bucket_assessments/assessments/" --profile "$profile" | awk '/\/$/ {sub("/",""); print $NF}')
+
+# Initialize max value
+max_value=0
+
+# Files to check in each folder
+declare -A files_to_check=(
+    ["RD_I_POS_Pallet_Requirement.csv"]="cos-i-subsistence/output/RD_I_POS_Pallet_Requirement.csv"
+    ["RD_IW_PaxLocationAll.csv"]="cos-i-water/output/RD_IW_PaxLocationAll.csv"
+    ["RD_II_VII_DailyTE_WithDimensions.csv"]="cos-ii-vii/output/RD_II_VII_DailyTE_WithDimensions.csv"
+    ["RD_VI_POS_Pallet_Requirement.csv"]="cos-vi/output/RD_VI_POS_Pallet_Requirement.csv"
+)
+
+# Function to check if a folder contains the required files
+check_files_in_folder() {
+    local folder=$1
+    for file in "${!files_to_check[@]}"; do
+        file_path="assessments/$folder/cos-calculators/${files_to_check[$file]}"
+        if ! aws s3 ls "s3://$bucket_assessments/$file_path" --profile "$profile" > /dev/null 2>&1; then
+            echo "File $file_path not found in folder $folder."
+            return 1
+        fi
+    done
+    return 0
+}
+
+# Process each folder
+for folder in $folder_list; do
+    # Check if the folder name is a valid integer
+    if [[ $folder =~ ^[0-9]+$ ]]; then
+        # List all objects in the folder and filter based on the last modified date
+        object_list=$(aws s3api list-objects-v2 --bucket "$bucket_assessments" --prefix "assessments/$folder/" --profile "$profile" --query "Contents[?LastModified>=\`$three_months_ago\`].{Key:Key,LastModified:LastModified}" --output json)
+
+        # Check if there are any objects in the list
+        if [ $(echo "$object_list" | jq length) -gt 0 ]; then
+            echo "Folder $folder has been modified within the last three months."
+
+            # Check if the folder contains the required files
+            if check_files_in_folder "$folder"; then
+                if [ "$folder" -gt "$max_value" ]; then
+                    max_value=$folder
+                fi
+            else
+                echo "Required files not found in folder $folder. Skipping."
+            fi
+        else
+            echo "Folder $folder was not modified within the last three months. Skipping."
+        fi
+    else
+        echo "Skipping non-integer folder: $folder"
+    fi
+done
+
+# Save max value to environment variable 'test_id'
+export test_id=$((max_value + 1))
+
+# Print for confirmation
+echo "Highest Assessment ID is: $max_value"
+echo "Next Assessment ID is: $test_id"
+echo "Environment variable test_id set to: $test_id"
+
+# Save the document to a file
+echo "$test_id" > test_id.txt
+
+```
+
+```{bash eval=FALSE}
+
+aws s3 cp s3://{bucket_name}/assessments/template/RD_IW_PaxLocationAll_joined.csv test_assessment --profile quicksight
+
+```
+
+```{bash eval=FALSE}
+
+
+aws s3 sync test_assessment s3://imat-assessments/assessments/10910 --profile mushin
+
+``` 
+
+### Helper Functions/Files
+
+#### Object Keys
+
+```{bash eval=FALSE}
+
+object_keys=$(aws s3api list-objects-v2 --bucket {bucket_name} --prefix "assessments/template" --output json --profile cana  | jq -r '.Contents[].Key')
+
+# Save the filtered object keys to a CSV file
+output_csv="s3_object_keys.csv"
+echo "ObjectKey" > "$output_csv"  # Add CSV header
+echo "$object_keys" | while read -r key; do
+    echo "$key" >> "$output_csv"
+done
+
+# Print the filtered object keys
+echo "Object keys:"
+echo "$object_keys"
+
+```
+
+#### File IDs
+
+```{r file-id }
+
+construct_file_id <- function(s3_key, assessment_id) {
+  s3_prefix_unwanted <- c("assessments", assessment_id, "cos-calculators", "input", "output")
+  full_s3_prefix <- strsplit(s3_key, "/")[[1]]
+  file_name <- tail(full_s3_prefix, n=1)
+  file_name_without_ext <- sub("\\.[^.]+$", "", file_name)
+  file_id <- gsub('_', "-", file_name_without_ext)
+  return(file_id)
+}
+
+construct_file_name <- function(s3_key, assessment_id) {
+  s3_prefix_unwanted <- c("assessments", assessment_id, "cos-calculators", "input", "output")
+  full_s3_prefix <- strsplit(s3_key, "/")[[1]]
+  file_name <- tail(full_s3_prefix, n=1)
+  file_name_without_ext <- sub("\\.[^.]+$", "", file_name)
+  return(file_name_without_ext)
+}
+
+```
+
+#### Process ZIP files
+
+```{r process-zip-files, eval=FALSE}
+
+# Import necessary Python libraries
+boto3 <- import("boto3")
+io <- import("io")
+zipfile <- import("zipfile")
+
+# Function to list all .zip files in an S3 bucket
+list_zip_files <- function(bucket_assessment, prefix, profile_name) {
+  s3_client <- boto3$session$Session(profile_name = profile_name)$client("s3")
+  
+  response <- s3_client$list_objects_v2(Bucket = bucket_assessment, Prefix = prefix)
+  
+  zip_files <- list()
+  if ("Contents" %in% names(response)) {
+    for (item in response$Contents) {
+      if (grepl('\\.zip$', item$Key)) {
+        zip_files <- append(zip_files, item$Key)
+      }
+    }
+  }
+  return(zip_files)
+}
+
+
+# Function to extract and unzip specific .zip files in S3 bucket
+extract_zip_files <- function(bucket_assessment, zip_filenames, unzipped_files, assessment_id, profile_name) {
+  s3_client <- boto3$session$Session(profile_name = profile_name)$client("s3")
+  
+  extracted_files <- list()
+  
+  # Construct the prefix
+  prefix <- paste0("assessments/", assessment_id, "/")
+  
+  for (zip_filename in zip_filenames) {
+    # Get the .zip file from S3
+    zip_obj <- s3_client$get_object(Bucket = bucket_assessment, Key = zip_filename)
+    buffer <- io$BytesIO(zip_obj$Body$read())
+    
+    # Extract the .zip file
+    zip_ref <- zipfile$ZipFile(buffer, 'r')
+    for (file in zip_ref$namelist()) {
+      file_data <- zip_ref$read(file)
+      
+      # Determine if the file should be placed in the parent folder with prefix
+      if (basename(file) %in% unzipped_files) {
+        extracted_key <- paste0(prefix, basename(file))  # Place in the parent folder with prefix
+      } else {
+        extracted_key <- paste0(prefix, 'extracted/', basename(file))  # Place in the 'extracted' folder within the prefix
+      }
+      
+      s3_client$put_object(Bucket = bucket_assessment, Key = extracted_key, Body = file_data)
+      
+      if (grepl('\\.csv$', tolower(file))) {
+        extracted_files <- append(extracted_files, extracted_key)
+      }
+    }
+  }
+  
+  return(extracted_files)
+}
+
+
+```
+
+#### S3 File Metadata
+
+```{r extract-file-features, eval=FALSE}
+
+# Function to extract column names or keys from CSV, JSON, ZIP, and TXT files
+extract_features <- function(object) {
+  s3_key <- object$Key
+  obj <- s3read_using(FUN = function(x) readBin(x, "raw", n = 1e6), object = s3_key, bucket = "{bucket_name}", opts = list(profile = "cana"))
+  
+  if (grepl("\\.csv$", s3_key)) {
+    data <- read_csv(rawConnection(obj), n_max = 0)  # Read only the header
+    features <- paste(names(data), collapse = ", ")
+    file_name <- basename(s3_key)
+    return(data.frame(s3_object_key = s3_key, parent_zip = NA, file_name = file_name, column_features = features, stringsAsFactors = FALSE))
+  } else if (grepl("\\.json$", s3_key)) {
+    print(s3_key)
+    json_content <- get_object(object = s3_key, bucket = bucket)
+    json_content <- rawToChar(json_content)
+    json_data <- fromJSON(json_content, flatten = TRUE)
+    # Extract keys from the JSON data
+    json_keys <- names(json_data)
+    features <- paste(names(json_keys), collapse = ", ")
+    file_name <- basename(s3_key)
+    return(data.frame(s3_object_key = s3_key, parent_zip = NA, file_name = file_name, column_features = features, stringsAsFactors = FALSE))
+  } else if (grepl("\\.zip$", s3_key)) {
+    temp_file <- tempfile(fileext = ".zip")
+    writeBin(obj, temp_file)
+    
+    # Check if the zip file can be opened
+    files <- tryCatch({
+      unzip(temp_file, list = TRUE)
+    }, error = function(e) {
+      message("Error in unzipping file: ", s3_key)
+      return(NULL)
+    })
+    
+    if (!is.null(files)) {
+      csv_files <- files$Name[grepl("\\.csv$", files$Name)]
+      results <- data.frame()
+      
+      for (csv_file in csv_files) {
+        csv_data <- read_csv(unz(temp_file, csv_file), n_max = 0)
+        features <- paste(names(csv_data), collapse = ", ")
+        file_name <- basename(s3_key)
+        results <- bind_rows(results, data.frame(s3_object_key = s3_key, parent_zip = file_name, file_name = csv_file, column_features = features, stringsAsFactors = FALSE))
+      }
+    } else {
+      results <- data.frame(s3_object_key = s3_key, parent_zip = NA, file_name = NA, column_features = NA, stringsAsFactors = FALSE)
+    }
+    
+    unlink(temp_file)  # Clean up temporary file
+    return(results)
+  } else if (grepl("\\.txt$", s3_key)) {
+    data <- readLines(rawConnection(obj), n = 1)  # Read only the first line
+    features <- data
+    file_name <- basename(s3_key)
+    return(data.frame(s3_object_key = s3_key, parent_zip = NA, file_name = file_name, column_features = features, stringsAsFactors = FALSE))
+  } else {
+    return(data.frame(s3_object_key = s3_key, parent_zip = NA, file_name = NA, column_features = NA, stringsAsFactors = FALSE))
+  }
+}
+
+```
+
+#### Create Manifest Function
+
+```{r manifest-function}
+
+# Import boto3 Python library
+boto3 <- import("boto3")
+boto3_session <- boto3$Session
+
+# Function to create and upload manifest file to S3
+create_and_upload_manifest <- function(bucket_assessment, object_key, file_name_without_ext, bucket_manifests, assessment_id, profile_name) {
+  # Create a session with the specified profile
+  session <- boto3_session(profile_name = profile_name)
+  s3_client <- session$client("s3")
+  
+  # Create JSON document for this .csv file
+  manifest_json <- list(
+    entries = list(
+      list(
+        url = paste0("s3://", bucket_assessment, "/", object_key),
+        mandatory = TRUE
+      )
+    )
+  )
+  
+  manifest_content <- toJSON(manifest_json, pretty = TRUE, auto_unbox = TRUE)
+  manifest_file_name <- paste0("manifest_", file_name_without_ext, ".json")
+  cat(paste('Manifest content to upload:', manifest_content, "\n"))
+  cat(paste('Uploading manifest file:', manifest_file_name, "\n"))
+  
+  tryCatch({
+    s3_client$put_object(
+      Bucket = bucket_manifests,
+      Key = paste0(assessment_id, "/", manifest_file_name),
+      Body = manifest_content
+    )
+    cat('Manifest file uploaded successfully\n')
+  }, error = function(e) {
+    cat(paste('Error uploading manifest file:', e$message, "\n"))
+  })
+}
+
+
+```
+
+#### Create Datasource Function
+
+```{r datasource-function}
+
+boto3 <- import("boto3")
+boto3_session <- boto3$Session
+
+# Function to create a QuickSight data source
+create_qs_data_source <- function(aws_account_id, data_source_id, data_source_name, s3_manifest_bucket, s3_manifest_key, profile_name) {
+  # Create a session with the specified profile
+  session <- boto3_session(profile_name = profile_name)
+  quicksight_client <- session$client("quicksight")
+  
+  tryCatch({
+    response <- quicksight_client$create_data_source(
+      AwsAccountId = aws_account_id,
+      DataSourceId = data_source_id,
+      Name = data_source_name,
+      Type = 'S3',
+      DataSourceParameters = list(
+        S3Parameters = list(
+          ManifestFileLocation = list(
+            Bucket = s3_manifest_bucket,
+            Key = s3_manifest_key
+          )
+        )
+      )
+    )
+    cat('Data source created successfully:\n')
+    print(response)
+    
+    # Save DataSourceArn to a variable
+    datasource_arn <- response$Arn
+    cat("DataSource ARN:", datasource_arn, "\n")
+    
+    # Optionally return the ARN if you need to use it outside the function
+    return(datasource_arn)
+  }, error = function(e) {
+    cat('Error creating data source:', e$message, "\n")
+  })
+}
+
+```
+
+#### Create Logical Table Map Function
+
+```{r logical-table-map-function}
+
+generate_logical_table <- function(base_filename, table_logical_id, table_physical_id, input_columns) {
+  # Initialize the base structure
+  logical_table <- list()
+  logical_table[[table_logical_id]] <- list(
+    Alias = base_filename,
+    DataTransforms = list(),
+    Source = list(
+      PhysicalTableId = table_physical_id
+    )
+  )
+  
+  # Add CastColumnTypeOperation for each column
+  for (column in input_columns) {
+    column_name <- column$Name
+    new_column_type <- column$Type
+    
+    cast_operation <- list(
+      CastColumnTypeOperation = list(
+        ColumnName = column_name,
+        NewColumnType = new_column_type
+      )
+    )
+    logical_table[[table_logical_id]]$DataTransforms <- append(logical_table[[table_logical_id]]$DataTransforms, list(cast_operation))
+    
+    # Add TagColumnOperation for geographic columns
+    if (column_name == "Region" || column_name == "Region_MEF_Lead") {
+      tag_operation <- list(
+        TagColumnOperation = list(
+          ColumnName = column_name,
+          Tags = list(
+            list(ColumnGeographicRole = "STATE")
+          )
+        )
+      )
+      logical_table[[table_logical_id]]$DataTransforms <- append(logical_table[[table_logical_id]]$DataTransforms, list(tag_operation))
+    }
+  }
+  
+  # Add ProjectOperation with all columns
+  projected_columns <- lapply(input_columns, function(column) column$Name)
+  project_operation <- list(
+    ProjectOperation = list(
+      ProjectedColumns = projected_columns
+    )
+  )
+  logical_table[[table_logical_id]]$DataTransforms <- append(logical_table[[table_logical_id]]$DataTransforms, list(project_operation))
+  
+  return(toJSON(logical_table, auto_unbox = TRUE))
+}
+
+
+```
+
+#### Create Physical Table Map Function
+
+```{r physical-table-map-function}
+
+generate_physical_table <- function(table_physical_id, datasource_arn, input_columns) {
+  # Initialize the base structure
+  physical_table <- list()
+  physical_table[[table_physical_id]] <- list(
+    S3Source = list(
+      DataSourceArn = datasource_arn,
+      UploadSettings = list(
+        Format = "CSV",
+        StartFromRow = 1,
+        ContainsHeader = TRUE,
+        TextQualifier = "DOUBLE_QUOTE",
+        Delimiter = ","
+      ),
+      InputColumns = lapply(input_columns, function(column) {
+        list(Name = column$Name, Type = "STRING")
+      })
+    )
+  )
+  
+  return(toJSON(physical_table, auto_unbox = TRUE))
+}
+
+
+```
+
+#### Dataset Input Column Types
+
+```{r input-columns-function}
+
+# Function to generate input columns list from a data frame
+generate_input_columns_list <- function(df) {
+  columns <- names(df)
+  types <- sapply(df, class)
+  
+  input_columns_list <- lapply(seq_along(columns), function(i) {
+    list(Name = columns[i], Type = switch(types[i],
+      "numeric" = "DECIMAL",
+      "integer" = "INTEGER",
+      "double" = "DECIMAL",
+      "character" = "STRING",
+      "logical" = "STRING",
+      "factor" = "STRING",
+      "unknown" = "STRING"
+    ))
+  })
+  return(input_columns_list)
+}
+
+```
+
+#### Process S3 Files
+
+```{r read-s3-function}
+
+process_s3_csv2 <- function(assessment_id, bucket_assessment, object_key, profile) {
+  # Set the AWS profile for the get_object operation
+  set_aws_profile(profile)
+  
+  # Extract base file name without extension
+  base_file_name_parts <- str_split(object_key, "/")[[1]]
+  base_file_name <- base_file_name_parts[length(base_file_name_parts)]
+  file_object <- str_remove(base_file_name, "\\.csv$")
+  
+  # Function to read CSV from S3
+  read_s3_csv <- function(bucket_name, object_key) {
+    # Read the CSV file from S3
+    file_content <- get_object(object_key, bucket = bucket_name)
+    
+    # Convert raw vector to character string
+    file_content <- rawToChar(file_content)
+    
+    # Read the CSV content into a data frame
+    df <- read.csv(text = file_content)
+    
+    return(df)
+  }
+  
+  # Read the CSV file and assign it to a variable with the base file name
+  assign(file_object, read_s3_csv(bucket_assessment, object_key), envir = .GlobalEnv)
+  
+  # Access the data frame using get
+  data_frame <- get(file_object)
+  
+  return(data_frame)
+}
+
+```
+
+#### Assessment Dashboard Source Files
+
+##### ZIP Files
+
+```{r view-zip-files, eval=FALSE}
+
+bucket_assessment <- "{bucket_name}"
+
+prefix <- paste0("assessments/", assessment_id,"/")
+profile_name <- "cana"
+
+# List all .zip files in the S3 bucket
+zip_files <- list_zip_files(bucket_assessment, prefix, profile_name)
+print(zip_files)
+
+```
+
+```{r unzip-files, eval=FALSE}
+
+# Need '_RD_I__Input.zip'
+
+zip_filenames <- zip_files[c(1,18)]
+unzipped_files <- c("Locations.csv")  
+profile_name <- "quicksight"
+
+extracted_files <- extract_zip_files(bucket_assessment, zip_filenames, unzipped_files, assessment_id, profile_name)
+
+print(extracted_files)
+
+
+```
+
+#### Source Files for QuickSight Dashboard Datasets
+
+1.  RD_I_PaxLocationAll.csv
+
+2.  RD_I_POS_Location.csv
+
+3.  RD_I_Ration_Costs.csv
+
+4.  RD_I_POS_Pallet_Requirement.csv
+
+5.  RD_IW_PaxLocationAll.csv
+
+6.  RD_IW_Ration_Costs.csv
+
+7.  RD_IW_POS_Requirement.csv
+
+8.  RD_II_VII_DailyTE_WithDimensions.csv
+
+9. AssessmentTable.csv
+
+10. AssessmentParameterDataMapTable.csv
+
+11. Locations.csv 
+
+12. RD_IIIP_POL_Pkg_NSN_Requirements_PBI.csv
+
+13. RD_II_ICCE_DailyTE.csv
+
+14. RD_IV_Daily_Requirements.csv
+
+15. RD_VI_POS_Pallet_Requirements.csv
+
+16. RD_IX_Requirement_Trimmed.csv
+
+**(AWS Lambda Pre-Processor)**
+
+17. cosi_embark.csv
+
+18. cosi_water_embark.csv
+
+19. cosii_vii_emabark.csv
+
+20. cosiiip_embark.csv
+
+21. cosiv_emabrk.csv
+
+22. cosvi_embark.csv
+
+23. cosix_embark.csv
+
+24. aggregated_embark.csv
+
+25. ForceFlow_joined.csv
+
+#### Aggregation Calculations
+
+[Embark Calculations](/setup/embark/embark.qmd)
+
+
+```{bash eval=FALSE}
+
+object_keys=$(aws s3api list-objects-v2 --bucket {bucket_name} --prefix "assessments/$assessment_id" --output json --profile cana  | jq -r '.Contents[].Key')
+
+# Object keys
+output_csv="s3_object_keys.csv"
+echo "ObjectKey" > "$output_csv"  # Add CSV header
+echo "$object_keys" | while read -r key; do
+    echo "$key" >> "$output_csv"
+done
+
+# Print the filtered object keys
+echo "Object keys:"
+echo "$object_keys"
+
+```
+
+### Extract Assessment Folder File Metadata
+
+```{r get-assessment-folder-metadata, eval=FALSE}
+
+# Set AWS profile
+Sys.setenv(AWS_PROFILE = "cana")
+
+# Assessment Bucket
+bucket_assessment <- "{bucket_name}"
+assessment_id <- 'template'
+
+# Construct the assessment path
+assessment_path <- paste0("assessments/", assessment_id,"/")
+
+# List objects in the specified path within the S3 bucket
+s3_objects <- get_bucket(bucket = "{bucket_name}", prefix = assessment_path, recursive = TRUE)
+
+# Apply the extraction function to each object in the S3 bucket
+results <- s3_objects %>%
+  map_dfr(~tryCatch(extract_features(.x), error = function(e) {
+    message("Error processing file: ", .x$Key)
+    return(data.frame(s3_object_key = .x$Key, parent_zip = NA, file_name = NA, column_features = NA, stringsAsFactors = FALSE))
+  }))
+
+
+```
+
+```{r eval=FALSE}
+write_csv(results, here("s3_embark_metadata.csv"))
+```
+
+### Assessment Files Metadata
+
+```{r load-assessment-metadata, eval=FALSE}
+
+s3_assessment_metadata <- read_csv(here("s3_assessment_metadata.csv"))
+
+s3_assessment_metadata %>% 
+  head(15) 
+
+```
+
+### Final Dataset Build Pipeline
+
+***Files:***\
+***-RD_I_PaxLocationAll.csv\
+-RD_I_POS_Location.csv\
+-RD_I_Ration_Costs.csv\
+-RD_I_POS_Pallet_Requirement.csv\
+-RD_IW_PaxLocationAll.csv\
+-RD_IW_Ration_Costs.csv\
+-RD_IW_POS_Requirement.csv\
+-RD_II_VII_DailyTE_WithDimensions.csv\
+-RD_II_ICCE_DailyTE.csv\
+-RD_IIIP_POL_Pkg_NSN_Requirements_PBI.csv\
+-RD_IV_Daily_Requirements.csv\
+-RD_VI_POS_Pallet_Requirement.csv\
+-RD_IX_Requirement_Trimmed.csv\
+-AssessmentTable.csv\
+-AssessmentParameterDataMapTable.csv\
+-Locations.csv\
+-POS.csv\
+-cosi_embark.csv\
+-cosi_water_embark.csv\
+-cosii_vii_embark.csv\
+-cosiiip_embark.csv\
+-cosiv_embark.csv\
+-cosvi_embark.csv\
+-cosix_embark.csv\
+-aggregated_embark.csv\
+-ForceFlow_joined.csv***
+
+***Special Preprocessing (Joins added in QuickSight GUI)***\
+-RD_I_POS_Location.csv\
+-RD_I_Ration_Costs.csv\
+-RD_IW_PaxLocationAll.csv\
+-RD_IW_Ration_Costs.csv\
+
+### Build QuickSight Data Assets
+
+```{r}
+
+file_s3 <- s3_assessment_metadata %>% 
+  filter(file_name == 'aggregated_embark.csv') %>% 
+  filter(is.na(parent_zip)) 
+ 
+file_s3
+
+```
+
+#### Manifest Create
+
+s3://{bucket_name}/assessments/template/RD_I_POS_Location_joined.csv
+s3://{bucket_name}/assessments/template/RD_I_Ration_Costs_joined.csv
+s3://{bucket_name}/assessments/template/RD_IW_Ration_Costs_joined.csv
+s3://{bucket_name}/assessments/template/RD_IW_PaxLocationAll_joined.csv
+s3://{bucket_name}/assessments/template/extracted/Locations.csv
+s3://{bucket_name}/assessments/template/RD_IW_PaxLocationAll_joined.csv
+
+- Table Maps start here as well for variable assignment
+
+```{r}
+
+profile_name <- "quicksight"
+
+object_key <- 'assessments/template/cosvi_embark.csv'
+
+object_id <- construct_file_id(object_key, assessment_id)
+object_name <- gsub("-", "_", object_id)
+
+bucket_assessment <- '{bucket_name}'
+bucket_manifests <- Sys.getenv("bucket_manifests")
+
+```
+
+
+```{r}
+create_and_upload_manifest(bucket_assessment, object_key=object_key, file_name_without_ext=object_name, bucket_manifests, assessment_id, profile_name)
+
+```
+
+```{r settings}
+
+# Retrieve environment variables and set local variables
+
+profile_name <- "quicksight"
+region <- "us-east-1"
+
+aws_account_id <- Sys.getenv("imat_account_id")
+owner_arn <- Sys.getenv("owner_arn")
+
+datasource_id <- paste0(object_id,'-datasource-', assessment_id)
+datasource_name <- paste0(object_name,'_datasource_', assessment_id)
+
+dataset_id <- paste0(object_id,'-dataset-', assessment_id)
+dataset_name <- paste0(object_name,'_dataset_', assessment_id)
+
+manifest_file_name <- paste0("manifest_", object_name, ".json")
+s3_manifest_key <- paste0(assessment_id, "/", manifest_file_name)
+s3_manifest_bucket <- bucket_manifests
+
+table_logical_id <- paste0(object_id,'-logicalTable')
+table_physical_id <- paste0(object_id,'-physicalTable')
+
+Sys.setenv(dataset_id = dataset_id)
+Sys.setenv(datasource_id = datasource_id)
+Sys.setenv(object_id = object_id)
+Sys.setenv(object_name = object_name)
+
+
+```
+
+#### Datasource Create
+
+```{r datasource-create}
+
+datasource_arn <- create_qs_data_source(aws_account_id, datasource_id, datasource_name, s3_manifest_bucket, s3_manifest_key, profile_name)
+
+```
+
+#### Dataset Build Objects
+
+```{r}
+
+# Load necessary libraries
+library(aws.s3)
+library(stringr)
+
+# Set AWS profile and region
+Sys.setenv(AWS_PROFILE = "quicksight")
+Sys.setenv(AWS_DEFAULT_REGION = "us-east-1")
+
+
+# Extract base file name without extension
+base_file_name_parts <- str_split(object_key, "/")[[1]]
+base_file_name <- base_file_name_parts[length(base_file_name_parts)]
+file_object <- str_remove(base_file_name, "\\.csv$")
+
+# Function to read CSV from S3
+read_s3_csv <- function(bucket_name, object_key) {
+  # Read the CSV file from S3
+  file_content <- get_object(object_key, bucket = bucket_name)
+  
+  # Convert raw vector to character string
+  file_content <- rawToChar(file_content)
+  
+  # Read the CSV content into a data frame
+  df <- read.csv(text = file_content)
+  
+  return(df)
+}
+
+# Read the CSV file and assign it to a variable with the base file name
+assign(file_object, read_s3_csv(bucket_assessment, object_key))
+
+# Access the data frame using get
+file_object <- get(file_object)
+
+```
+
+```{r}
+
+# Generate the input columns list
+input_columns <- generate_input_columns_list(file_object)
+
+```
+
+```{bash}
+
+aws quicksight describe-data-source \
+  --aws-account-id xxxxxxxxxxxx  \
+  --data-source-id $datasource_id \
+  --profile quicksight
+
+
+```
+
+
+```{r}
+
+datasource_arn=paste0("arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:datasource/",datasource_id)
+
+owner_arn="arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:user/default/quicksight"
+
+json_physical <- generate_physical_table(table_physical_id, datasource_arn, input_columns)
+
+cat(json_physical)
+
+```
+
+```{r}
+
+json_logical <- generate_logical_table(object_name, table_logical_id, table_physical_id, input_columns)
+
+cat(json_logical)
+
+```
+
+#### Dataset Create
+
+```{python}
+
+import boto3
+import json
+import os
+import logging
+from botocore.exceptions import ClientError
+
+# Set up logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Create a session with the specified profile
+profile_name = 'quicksight' 
+session = boto3.Session(profile_name=profile_name)
+
+# Initialize AWS clients using the session
+s3_client = session.client('s3')
+quicksight_client = session.client('quicksight')
+
+# Define AWS account details from environment variables or directly in the script
+aws_account_id = 'xxxxxxxxxxxx'
+dataset_id = r.dataset_id
+dataset_name = r.dataset_name
+owner_arn = r.owner_arn
+
+json_physical = json.loads(r.json_physical)
+json_logical = json.loads(r.json_logical)
+
+# Create dataset in QuickSight
+try:
+    dataset_response = quicksight_client.create_data_set(
+        AwsAccountId=aws_account_id,
+        DataSetId=dataset_id,
+        Name=dataset_name,
+        PhysicalTableMap=json_physical,
+        LogicalTableMap=json_logical,
+        ImportMode='SPICE',
+        Permissions=[
+            {
+                "Principal": owner_arn,
+                "Actions": [
+                    "quicksight:UpdateDataSetPermissions",
+                    "quicksight:DescribeDataSet",
+                    "quicksight:DescribeDataSetPermissions",
+                    "quicksight:PassDataSet",
+                    "quicksight:DescribeIngestion",
+                    "quicksight:ListIngestions",
+                    "quicksight:UpdateDataSet",
+                    "quicksight:DeleteDataSet",
+                    "quicksight:CreateIngestion",
+                    "quicksight:CancelIngestion"
+                ]
+            }
+        ]
+    )
+    logger.info(f"Dataset created successfully: {dataset_response}")
+except ClientError as e:
+    logger.error(f"Error creating dataset: {e}")
+    dataset_response = None
+
+# Print the response
+if dataset_response:
+    print(json.dumps(dataset_response, indent=4))
+
+```
+
+#### Create Table Maps From New Dataset after performing joins in AWS QuickSight GUI
+		
+```{bash}
+
+file_name=$object_name
+
+dataset_name=$(aws quicksight describe-data-set \
+  --aws-account-id "$imat_account_id" \
+  --data-set-id $dataset_id \
+  --query 'DataSet.Name' \
+  --output text \
+  --profile quicksight)
+  
+echo "Dataset Name: $dataset_name"
+
+# Fetch dataset details using the dataset ID
+dataset_info=$(aws quicksight describe-data-set \
+  --aws-account-id $imat_account_id \
+  --data-set-id $dataset_id \
+  --region us-east-1 \
+  --profile quicksight)
+
+# Check for errors in fetching dataset details
+if [ $? -ne 0 ]; then
+    echo "Error in fetching details for dataset ID: $dataset_id"
+    exit 1
+fi
+
+# Save the dataset information to JSON file
+echo "$dataset_info" > "${file_name}_table_map.json"
+
+# Extract the LogicalTableMap and save it to a file
+new_logical_table_map=$(echo "$dataset_info" | jq -r '.DataSet.LogicalTableMap')
+echo "$new_logical_table_map" > "${file_name}_logical_map.json"
+
+# Extract the PhysicalTableMap and save it to a file
+new_physical_table_map=$(echo "$dataset_info" | jq -r '.DataSet.PhysicalTableMap')
+echo "$new_physical_table_map" > "${file_name}_physical_map.json"
+
+# move all files to table_maps directory
+mv *_map.json table_maps
+
+```
+
+
+- Loop through until all GUI Join datasets created..
+
+- Additional step for using table maps in separate AWS account
+
+```{bash}
+pwd
+```
+
+
+```{bash}
+
+# Directory containing the JSON files
+directory="/d/CANA/IMAT_Power_BI_Migration/quicksight-dashboard-automation/setup/datasets/table_maps"
+
+# Loop through all JSON files in the directory
+for file in "$directory"/*.json; do
+  if [[ -f "$file" ]]; then
+    # Use sed to replace '535362115856' with 'xxxxxxxxxxxx'
+    sed -i 's/535362115856/xxxxxxxxxxxx/g' "$file"
+    echo "Processed $file"
+  fi
+done
+
+```
+
+
+
+### Analysis ARNs
+
+```{bash}
+
+aws quicksight list-analyses --aws-account-id $imat_account_id --profile imat
+
+```
+
+```{bash}
+
+aws quicksight describe-analysis --aws-account-id $imat_account_id --analysis-id "rd-analysis-template-10910" --profile imat
+
+```
+
+### Template ARNs
+
+```{bash}
+
+aws quicksight list-templates --aws-account-id $imat_account_id --profile imat
+
+```
+
+### Template/Analysis Configuration
+
+```{bash}
+
+aws quicksight describe-template --aws-account-id $imat_account_id --template-id "rd-template-109010" --profile imat > template_description.json
+
+
+aws quicksight describe-analysis --aws-account-id $imat_account_id --analysis-id "rd-analysis-template-10910" --profile imat > analysis_description.json
+
+```
+
+
+
+```{python}
+
+# Load the data from the files
+with open('template_description.json') as template_file:
+    template_data = json.load(template_file)
+
+with open('available_datasets.json') as available_datasets_file:
+    available_datasets_data = json.load(available_datasets_file)
+
+# Extract the expected datasets from the template
+expected_datasets = [
+    f"{config['Placeholder'].replace('_', '-').replace('-dataset-template', '-dataset-2007')}"
+    for config in template_data['Template']['Version']['DataSetConfigurations']
+]
+
+# Extract the available datasets
+available_datasets = available_datasets_data['available_datasets']
+
+# Find the missing datasets
+missing_datasets = [dataset for dataset in expected_datasets if dataset not in available_datasets]
+
+# Print the results
+print("Expected datasets:", expected_datasets)
+print("Available datasets:", available_datasets)
+print("Missing datasets:", missing_datasets)
+print("Number of missing datasets:", len(missing_datasets))
+
+
+```
+
+### Create Dashboard from Template
+
+#### Create Source Entity
+
+```{python}
+
+import boto3
+import json
+import os
+
+
+def query_dynamodb_for_datasets(dynamodb_table, assessment_id):
+    
+    # Initialize the session with the specified profile
+    session = boto3.Session(profile_name='mushin')
+    
+    # Initialize the DynamoDB client with the session
+    client = session.client('dynamodb')
+   
+    """Query DynamoDB table for available datasets for the given assessment_id"""
+    response = client.query(
+        TableName=dynamodb_table,
+        KeyConditionExpression='assessment_id = :assessment_id',
+        ExpressionAttributeValues={
+            ':assessment_id': {'S': assessment_id}
+        }
+    )
+    datasets = []
+    for item in response.get('Items', []):
+        datasets.append(item['dataset_id']['S'])
+    return datasets
+  
+```
+
+
+```{python}
+
+import json
+
+def build_source_entity(datasets, aws_account_id, region, assessment_id, source_template_arn):
+    """Build the source entity based on the list of datasets"""
+    dataset_placeholder_mapping = {
+        "AssessmentTable-dataset": "AssessmentTable_dataset_template",
+        "AssessmentParameterDataMapTable-dataset": "AssessmentParameterDataMapTable_dataset_template",
+        "ForceFlow-joined-dataset": "ForceFlow_joined_dataset_template",
+        "RD-I-Ration-Costs-dataset": "RD_I_Ration_Costs_dataset_template",
+        "cosi-water-embark-dataset": "cosi_water_embark_dataset_template",
+        "cosiiip-embark-dataset": "cosiiip_embark_dataset_template",
+        "RD-II-VII-DailyTE-WithDimensions-dataset": "RD_II_VII_DailyTE_WithDimensions_dataset_template",
+        "cosiv-embark-dataset": "cosiv_embark_dataset_template",
+        "POS-dataset": "POS_dataset_template",
+        "cosi-embark-dataset": "cosi_embark_dataset_template",
+        "RD-IW-Ration-Costs-dataset": "RD_IW_Ration_Costs_dataset_template",
+        "cosix-embark-dataset": "cosix_embark_dataset_template",
+        "RD-IW-PaxLocationAll-dataset": "RD_IW_PaxLocationAll_dataset_template",
+        "Locations-dataset": "Locations_dataset_template",
+        "cosvi-embark-dataset": "cosvi_embark_dataset_template",
+        "RD-IX-Requirement-dataset": "RD_IX_Requirement_dataset_template",
+        "RD-I-POS-Pallet-Requirement-dataset": "RD_I_POS_Pallet_Requirement_dataset_template",
+        "RD-I-POS-Location-dataset": "RD_I_POS_Location_dataset_template",
+        "cosii-vii-embark-dataset": "cosii_vii_embark_dataset_template",
+        "aggregated-embark-dataset": "aggregated_embark_dataset_template",
+        "RD-IW-POS-Requirement-dataset": "RD_IW_POS_Requirement_dataset_template"
+    }
+    
+    dataset_references = []
+    for dataset_id in datasets:
+        for key, placeholder in dataset_placeholder_mapping.items():
+            if key in dataset_id:
+                dataset_references.append({
+                    "DataSetArn": f"arn:aws:quicksight:{region}:{aws_account_id}:dataset/{dataset_id}",
+                    "DataSetPlaceholder": placeholder
+                })
+    
+    source_entity = {
+        "SourceTemplate": {
+            "Arn": source_template_arn,
+            "DataSetReferences": dataset_references
+        }
+    }
+    
+    return source_entity
+  
+```
+
+
+```{python}
+
+dynamodb_table = 'imat-dashboard-datasets'
+assessment_id = '2007'
+
+available_datasets = query_dynamodb_for_datasets(dynamodb_table, assessment_id)
+
+print(available_datasets)
+
+len(available_datasets)
+
+# Save the results to a JSON file
+output = {
+    "available_datasets": available_datasets,
+    "count": len(available_datasets)
+}
+
+with open('available_datasets.json', 'w') as json_file:
+    json.dump(output, json_file, indent=4)
+
+```
+
+
+```{python}
+
+imat_account_id = 'xxxxxxxxxxxx'
+region = 'us-east-1'
+template_id = 'rd-template-109010'
+
+source_template_arn = f"arn:aws:quicksight:{region}:{imat_account_id}:template/{template_id}"
+    
+source_entity = build_source_entity(available_datasets, aws_account_id, region, assessment_id, source_template_arn)
+print(json.dumps(source_entity, indent=4))
+
+
+```
+
+```{python}
+
+import boto3
+
+def create_dashboard_from_template(
+        mushin_account_id,
+        dashboard_id,
+        dashboard_name,
+        source_entity,
+        principal_arn):
+    
+    # Initialize the session with the specified profile
+    session = boto3.Session(profile_name='mushin')
+    
+    client = session.client('quicksight')
+    
+    # Create the dashboard
+    response = client.create_dashboard(
+        AwsAccountId=mushin_account_id,
+        DashboardId=dashboard_id,
+        Name=dashboard_name,
+        SourceEntity=source_entity,
+        Permissions=[
+            {
+                'Principal': principal_arn,
+                'Actions': [
+                    'quicksight:DescribeDashboard',
+                    'quicksight:ListDashboardVersions',
+                    'quicksight:UpdateDashboardPermissions',
+                    'quicksight:QueryDashboard',
+                    'quicksight:UpdateDashboard',
+                    'quicksight:DeleteDashboard',
+                    'quicksight:DescribeDashboardPermissions',
+                    'quicksight:UpdateDashboardPublishedVersion'
+                ]
+            }
+        ]
+    )
+    
+    return response
+
+```
+
+```{python}
+
+imat_account_id = 'xxxxxxxxxxxx'
+mushin_account_id = "535362115856"
+region = 'us-east-1'
+template_id = 'rd-template-109010'
+dashboard_id = 'rd-assessment-2007'
+dashboard_name = 'RD_Assessment_2007'
+principal_arn="arn:aws:quicksight:us-east-1:535362115856:user/default/535362115856"
+
+source_template_arn = f"arn:aws:quicksight:{region}:{imat_account_id}:template/{template_id}"
+    
+source_entity = build_source_entity(available_datasets, mushin_account_id, region, assessment_id, source_template_arn)
+    
+response = create_dashboard_from_template(
+        mushin_account_id,
+        dashboard_id,
+        dashboard_name,
+        source_entity,
+        principal_arn)
+    
+print(response)
+
+```
+
+
+```{bash}
+
+aws quicksight describe-dashboard --aws-account-id 535362115856 --dashboard-id rd-assessment-2007 --profile mushin
+
+
+
+```
+

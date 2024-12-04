@@ -1,0 +1,36 @@
+{
+  "POS-physicalTable": {
+    "S3Source": {
+      "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/POS-datasource-template",
+      "UploadSettings": {
+        "Format": "CSV",
+        "StartFromRow": 1,
+        "ContainsHeader": true,
+        "TextQualifier": "DOUBLE_QUOTE",
+        "Delimiter": ","
+      },
+      "InputColumns": [
+        {
+          "Name": "X",
+          "Type": "STRING"
+        },
+        {
+          "Name": "POS",
+          "Type": "STRING"
+        },
+        {
+          "Name": "DOS",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Period",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Sort_Index",
+          "Type": "STRING"
+        }
+      ]
+    }
+  }
+}

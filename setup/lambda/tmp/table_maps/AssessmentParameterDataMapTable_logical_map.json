@@ -1,0 +1,213 @@
+{
+  "AssessmentParameterDataMapTable-logicalTable": {
+    "Alias": "AssessmentParameterDataMapTable_template",
+    "DataTransforms": [
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ID",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "AssessmentID",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DaysOfSupplyFirst",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DaysOfSupplySecond",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DaysOfSupplyThird",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "OverrideTFSMS",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "PercentToFemalePopulation",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CalculateCRRForII_ICCE",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "UseII_VII_CARFForII_ICCE",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "PercentForCARFForEachPOSForII_ICCE",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIXCStockLevelPercent",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIXCPartsHistory",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIXExcludeTool",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIXExcludePol",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIXExcludeBattery",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIXExcludeClothing",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIXSStockLevelPercent",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIXSPartsHistory",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIXSFloatStartDay",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIXSRepairStartDay",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIIIPPOS1",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIIIPPOS2",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIIIPPOS3",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIIIPPOSBeyond",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIIIPHeavyPkg",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "ClassIIIPLightPkg",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "ProjectOperation": {
+          "ProjectedColumns": [
+            "ID",
+            "AssessmentID",
+            "ClimateTypeID",
+            "TheaterTypeID",
+            "WaterLevelID",
+            "DaysOfSupplyFirst",
+            "DaysOfSupplySecond",
+            "DaysOfSupplyThird",
+            "OverrideTFSMS",
+            "EpwsToFeed",
+            "PercentToFemalePopulation",
+            "POS1CARFRate",
+            "POS2CARFRate",
+            "POS3CARFRate",
+            "CalculateCRRForII_ICCE",
+            "UseII_VII_CARFForII_ICCE",
+            "PercentForCARFForEachPOSForII_ICCE",
+            "ClassIXCStockLevelPercent",
+            "ClassIXCPartsHistory",
+            "ClassIXCInventoryToConsider",
+            "ClassIXExcludeTool",
+            "ClassIXExcludePol",
+            "ClassIXExcludeBattery",
+            "ClassIXExcludeClothing",
+            "ClassIXCAcqAdvJson",
+            "ClassIXCPhcJson",
+            "ClassIXSStockLevelPercent",
+            "ClassIXSPartsHistory",
+            "ClassIXSInventoryToConsider",
+            "ClassIXSFloatStartDay",
+            "ClassIXSRepairStartDay",
+            "ClassIIIPPOS1",
+            "ClassIIIPPOS2",
+            "ClassIIIPPOS3",
+            "ClassIIIPPOSBeyond",
+            "ClassIIIPHeavyPkg",
+            "ClassIIIPLightPkg",
+            "CreatedBy",
+            "CreatedOn",
+            "UpdatedBy",
+            "UpdatedOn"
+          ]
+        }
+      }
+    ],
+    "Source": {
+      "PhysicalTableId": "AssessmentParameterDataMapTable-physicalTable"
+    }
+  }
+}

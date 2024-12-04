@@ -1,0 +1,774 @@
+---
+title: "Dashboard Definition File Testing"
+author: "Jerome Dixon"
+execute: 
+  eval: false
+format: 
+  html: 
+    link-external-icon: true
+    link-external-newwindow: true
+    toc: true
+    toc-depth: 5
+    code-fold: true
+    code-summary: "Show the code"
+    embed-resources: true
+    default-image-extension: svg
+    dpi: 600
+    theme: cosmo
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+### R Environment
+
+```{r libraries}
+
+library(aws.s3)
+library(dplyr)
+library(readr)
+library(DT)
+library(purrr)
+library(tidyr)
+library(jsonlite)
+library(here)
+
+
+Sys.setenv(aws_profile = "quicksight")
+Sys.setenv(source_bucket = "assessments-imat")
+Sys.setenv(bucket_manifests = "assessments-manifests")
+Sys.setenv(target_bucket = "assessments-embark-joins")
+Sys.setenv(imat_account_id = "xxxxxxxxxxxx")
+Sys.setenv(aws_region = "us-east-1")
+Sys.setenv(owner_arn="arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:user/default/quicksight")
+
+```
+
+### Python Environment
+
+```{python}
+
+import os
+import json
+import shutil
+from datetime import datetime
+import boto3
+from botocore.exceptions import ClientError
+
+# Create a boto3 session with the specific profile
+session = boto3.Session(profile_name='quicksight')
+
+# Initialize clients
+dynamodb_client = session.client('dynamodb')
+quicksight_client = session.client('quicksight')
+
+# Configuration
+dynamodb_table = os.getenv('DYNAMODB_TABLE', 'imat-dashboard-datasets')
+aws_account_id = os.getenv('AWS_ACCOUNT_ID', 'xxxxxxxxxxxx')
+region = os.getenv('AWS_REGION', 'us-east-1')
+owner_arn = os.getenv('OWNER_ARN', 'arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:user/default/quicksight')
+
+```
+
+
+### Existing Dashboards
+
+```{bash}
+aws quicksight list-dashboards --aws-account-id xxxxxxxxxxxx --query 'DashboardSummaryList[*].[DashboardId,Name]' --output table
+
+```
+
+#### Delete Dashboards
+
+```{bash}
+
+aws quicksight list-dashboards --aws-account-id xxxxxxxxxxxx --profile quicksight \
+  --query 'DashboardSummaryList[?starts_with(Name, `RD-Assessment-2020`)].DashboardId' \
+  --output text | xargs -I {} \
+  aws quicksight delete-dashboard --dashboard-id {} --aws-account-id xxxxxxxxxxxx \
+    --profile quicksight
+
+```
+
+
+### Create Dashboard from Definition File
+
+#### Definition File
+
+```{bash eval=FALSE}
+
+aws quicksight describe-dashboard-definition --dashboard-id 'cb4e0c9d-3771-4997-b274-7b9e25e3b66e' --aws-account-id xxxxxxxxxxxx | jq '.Definition' > dashboard_definition.json
+
+```
+
+#### Definition File Script
+
+```{python}
+import json
+import os
+
+def prettify_json(data):
+    '''Formats and indents JSON data for better readability.'''
+    return json.dumps(data, indent=4)
+
+def read_json_file(file_path):
+    '''Reads JSON data from a file.'''
+    with open(file_path, 'r') as file:
+        return json.load(file)
+
+# Get the directory of the current script
+current_dir = os.path.dirname(os.path.abspath(__name__))
+
+# Path to JSON file relative to the script's location
+dashboard_definition_path = os.path.join(current_dir, 'dashboard_definition.json')
+
+# Read the JSON file
+dashboard_definition = read_json_file(dashboard_definition_path)
+
+```
+
+
+```{python}
+
+# Prettify the JSON data
+prettified_json = prettify_json(dashboard_definition)
+
+# Print the prettified JSON
+print(prettified_json)
+
+```
+
+#### Edit Definition File
+
+- delete first filter group
+
+- update dataset identifiers
+
+```{bash}
+
+aws quicksight describe-analysis --analysis-id 79dae47e-0dbe-40fa-b3a9-00350b0a34f4 \
+  --aws-account-id $imat_account_id \
+  --profile quicksight > analysis_description.json
+
+```
+
+```{python}
+import json
+
+# Load the original analysis description JSON
+with open('analysis_description.json', 'r') as f:
+    analysis = json.load(f)
+
+# Extract DataSetArns from the analysis description
+dataset_arns = analysis['Analysis']['DataSetArns']
+
+# Create DataSetIdentifierDeclarations from DataSetArns
+identifier_declarations = []
+for arn in dataset_arns:
+    # Extract dataset ID from the ARN
+    dataset_id = arn.split('/')[-1]
+    # Create the identifier by replacing hyphens with underscores
+    identifier = dataset_id.replace('-', '_')
+    identifier_declarations.append({
+        "DataSetArn": arn,
+        "Identifier": identifier
+    })
+
+# Integrate the new DataSetIdentifierDeclarations into the existing definition file structure
+dashboard_definition['DataSetIdentifierDeclarations'] = identifier_declarations
+
+# Save the updated analysis JSON to a new file
+with open('updated_dashboard_definition.json', 'w') as f:
+    json.dump(dashboard_definition, f, indent=2)
+
+print("Updated dashboard definition file saved to updated_dashboard_definition.json")
+```
+
+```{python}
+
+def create_custom_dashboard_from_definition(quicksight_client, aws_account_id, dashboard_id, dashboard_name, dashboard_definition):
+    try:
+        permissions = [
+            {
+                "Principal": f"arn:aws:quicksight:{region}:{aws_account_id}:user/default/quicksight",
+                "Actions": [
+                    "quicksight:DescribeDashboard",
+                    "quicksight:ListDashboardVersions",
+                    "quicksight:UpdateDashboardPermissions",
+                    "quicksight:QueryDashboard",
+                    "quicksight:UpdateDashboard",
+                    "quicksight:DeleteDashboard",
+                    "quicksight:DescribeDashboardPermissions",
+                    "quicksight:UpdateDashboardPublishedVersion"
+                ]
+            }
+        ]
+
+        # Log the dashboard creation attempt
+        print(f"Attempting to create custom dashboard: {dashboard_id} in account: {aws_account_id}")
+
+        # Prepare the parameters for the create_dashboard method
+        create_dashboard_params = {
+            'AwsAccountId': aws_account_id,
+            'DashboardId': dashboard_id,
+            'Name': dashboard_name,
+            'Definition': dashboard_definition,
+            'Permissions': permissions,
+            'VersionDescription': 'Custom dashboard with selected datasets and sheets',
+            'DashboardPublishOptions': {
+                'AdHocFilteringOption': {'AvailabilityStatus': 'ENABLED'},
+                'ExportToCSVOption': {'AvailabilityStatus': 'ENABLED'},
+                'SheetControlsOption': {'VisibilityState': 'EXPANDED'}
+            }
+        }
+
+        # Call the create_dashboard method
+        response = quicksight_client.create_dashboard(**create_dashboard_params)
+
+        # Log the successful creation
+        print(f"Successfully created custom dashboard: {dashboard_id}")
+        return response
+
+    except Exception as e:
+        print(f"Error creating custom dashboard: {dashboard_id} in account: {aws_account_id}. Error: {e}")
+        raise
+
+
+```
+
+
+```{python}
+
+# Get the directory of the current script
+current_dir = os.path.dirname(os.path.abspath(__name__))
+
+# Path to JSON file relative to the script's location
+dashboard_definition_path = os.path.join(current_dir, 'updated_dashboard_definition.json')
+
+# Read the JSON file
+dashboard_definition = read_json_file(dashboard_definition_path)
+
+assessment_id = 'test-0003'
+new_dashboard_id = f"RD-Assessment-{assessment_id}"
+new_dashboard_name = f"RD_Assessment_{assessment_id}"
+
+
+response = create_custom_dashboard_from_definition(
+    quicksight_client=quicksight_client,
+    aws_account_id=aws_account_id,
+    dashboard_id=new_dashboard_id,
+    dashboard_name=new_dashboard_name,
+    dashboard_definition=dashboard_definition
+)
+
+# Print the response
+print(response)
+
+```
+
+#### Check for Errors
+
+```{bash}
+
+aws quicksight describe-dashboard-definition --dashboard-id 'RD-Assessment-test-0003' --aws-account-id xxxxxxxxxxxx > dashboard_definition_debug.json
+
+```
+
+```{bash}
+
+aws quicksight describe-dashboard --dashboard-id 'RD-Assessment-test-0003' --aws-account-id xxxxxxxxxxxx > dashboard_template.json
+
+```
+
+
+### Compare Different Definition Files for Structure
+
+```{bash}
+aws quicksight list-dashboards --aws-account-id xxxxxxxxxxxx --query 'DashboardSummaryList[*].[DashboardId,Name]' --output table
+
+```
+
+```{bash eval=FALSE}
+
+aws quicksight describe-dashboard-definition --dashboard-id '1524fc92-3f8e-4aea-91dd-4f0b0e75cabb' --aws-account-id xxxxxxxxxxxx | jq '.Definition' > test1.json
+
+```
+
+
+```{bash eval=FALSE}
+
+aws quicksight describe-dashboard-definition --dashboard-id '9d8b91b4-6221-4bdd-bbf6-45c74923931d' --aws-account-id xxxxxxxxxxxx | jq '.Definition' > test2.json
+
+```
+
+```{bash eval=FALSE}
+
+aws quicksight describe-dashboard-definition --dashboard-id '3b4c028b-ecfb-45f3-a4b9-377ca5dedaeb' --aws-account-id xxxxxxxxxxxx | jq '.Definition' > test3.json
+
+```
+
+
+
+#### Filter Definition File (Automated)
+
+```{python}
+
+
+def get_dynamic_mappings(assessment_id):
+
+    mappings = {
+        f"AssessmentTable-dataset-{assessment_id}": {
+            "SheetId": "rd-imat-summary-001",
+            "Name": "Summary",
+            "FilterGroupId": None
+        },
+        f"AssessmentParameterDataMapTable-dataset-{assessment_id}": {
+            "SheetId": "rd-imat-summary-001",
+            "Name": "Summary",
+            "FilterGroupId": None
+        },
+        f"Locations-dataset-{assessment_id}": {
+            "SheetId": "rd-imat-summary-001",
+            "Name": "Summary",
+            "FilterGroupId": None
+        },
+        f"POS-dataset-{assessment_id}": {
+            "SheetId": "rd-imat-summary-001",
+            "Name": "Summary",
+            "FilterGroupId": None
+        },
+        f"aggregated-embark-dataset-{assessment_id}": {
+            "SheetId": "rd-imat-embark-001",
+            "Name": "Embark",
+            "FilterGroupId": None
+        },
+        f"ForceFlow-joined-dataset-{assessment_id}": [
+            {"SheetId": "rd-imat-force-flow-001", "Name": "Force Flow", "FilterGroupId": "filter_group-0001-force-flow-joined"},
+            {"SheetId": "rd-imat-force-flow-001", "Name": "Force Flow", "FilterGroupId": "filter_group-0002-force-flow-joined"}
+        ],
+        f"RD-I-POS-Location-joined-dataset-{assessment_id}": {
+            "SheetId": "rd-imat-cl-i-001",
+            "Name": "CL I RD",
+            "FilterGroupId": None
+        },
+        f"RD-I-POS-Pallet-Requirement-dataset-{assessment_id}": {
+            "SheetId": "rd-imat-cl-i-001",
+            "Name": "CL I RD",
+            "FilterGroupId": None
+        },
+        f"RD-I-Ration-Costs-joined-dataset-{assessment_id}": {
+            "SheetId": "rd-imat-cl-i-001",
+            "Name": "CL I RD",
+            "FilterGroupId": None
+        },
+        f"cosi-embark-dataset-{assessment_id}": {
+            "SheetId": "rd-imat-cl-i-embark-001",
+            "Name": "CL I RD Embark",
+            "FilterGroupId": None
+        },
+        f"RD-IW-PaxLocationAll-joined-dataset-{assessment_id}": {
+            "SheetId": "rd-imat-cl-i-water-001",
+            "Name": "CL I (W) RD",
+            "FilterGroupId": None
+        },
+        f"RD-II-VII-DailyTE-WithDimensions-dataset-{assessment_id}": {
+            "SheetId": "rd-imat-cl-ii-vii-001",
+            "Name": "CL II/VII RD",
+            "FilterGroupId": None
+        },
+        f"cosii-vii-embark-dataset-{assessment_id}": {
+            "SheetId": "rd-imat-cl-ii-vii-embark-001",
+            "Name": "CL II/VII RD Embark",
+            "FilterGroupId": None
+        },
+        # Special case for -embark dataset with multiple sheets and filter groups
+        f"cosiiip-embark-dataset-{assessment_id}": [
+            {"SheetId": "rd-imat-cl-iiip-001", "Name": "CL IIIP RD", "FilterGroupId": None},
+            {"SheetId": "rd-imat-cl-iiip-embark-001", "Name": "CL IIIP RD Embark", "FilterGroupId": None}
+        ],
+        f"cosiv-embark-dataset-{assessment_id}": [
+            {"SheetId": "rd-imat-cl-iv-001", "Name": "CL IV RD", "FilterGroupId": "filter_group-0001-cosiv-embark"},
+            {"SheetId": "rd-imat-cl-iv-embark-001", "Name": "CL IV RD Embark", "FilterGroupId": "filter_group-0002-cosiv-embark"}
+        ],
+        f"cosvi-embark-dataset-{assessment_id}": [
+            {"SheetId": "rd-imat-cl-vi-001", "Name": "CL VI RD", "FilterGroupId": "filter_group-0001-cosvi-embark"},
+            {"SheetId": "rd-imat-cl-vi-embark-001", "Name": "CL VI RD Embark", "FilterGroupId": "filter_group-0002-cosvi-embark"},
+            {"SheetId": "rd-imat-cl-vi-embark-001", "Name": "CL VI RD Embark", "FilterGroupId": "filter_group-0003-cosvi-embark"}
+        ],
+        f"cosix-embark-dataset-{assessment_id}": [
+            {"SheetId": "rd-imat-cl-ix-001", "Name": "CL IX RD", "FilterGroupId": None},
+            {"SheetId": "rd-imat-cl-ix-embark-001", "Name": "CL IX RD Embark", "FilterGroupId": None}
+        ]
+    }
+
+    return mappings
+
+  
+```
+
+
+```{python}
+
+
+def get_distinct_sheet_ids(dataset_ids, assessment_id):
+    # Get dynamic mappings based on assessment_id
+    mappings = get_dynamic_mappings(assessment_id)
+    
+    # Extract distinct sheet IDs and names for the provided dataset_ids
+    result = {
+        "SheetIds": [],
+        "SheetNames": []
+    }
+    
+    for dataset_id in dataset_ids:
+        if dataset_id in mappings:
+            result["SheetIds"].append(mappings[dataset_id]["SheetId"])
+            result["SheetNames"].append(mappings[dataset_id]["Name"])
+    
+    # Return the mappings as a dictionary with SheetIds and Names
+    return result
+
+
+```
+
+```{python}
+
+# Get the directory of the current script
+current_dir = os.path.dirname(os.path.abspath(__name__))
+
+# Path to JSON file relative to the script's location
+dashboard_definition_path = os.path.join(current_dir, 'dashboard_definition.json')
+
+dashboard_json = read_json_file(dashboard_definition_path)
+
+# Extract the sheets from dashboard.json
+dashboard_sheets = {
+    (sheet["SheetId"], sheet["Name"]) for sheet in dashboard_json["Sheets"]
+}
+
+len(dashboard_sheets)
+
+dashboard_sheets
+
+```
+
+```{python}
+
+def create_dataset_map(available_datasets):
+    dataset_map = {dataset.replace('-', '_'): f"arn:aws:quicksight:us-east-1:xxxxxxxxxxxx:dataset/{dataset}" for dataset in available_datasets}
+    logger.info(f"Dataset map created: {dataset_map}")
+    return dataset_map
+
+
+def update_dataset_identifier_declarations(dashboard_json, dataset_map):
+    updated_declarations = []
+    for declaration in dashboard_json.get('DataSetIdentifierDeclarations', []):
+        if declaration['Identifier'] in dataset_map:
+            declaration['DataSetArn'] = dataset_map[declaration['Identifier']]
+            updated_declarations.append(declaration)
+            logger.info(f"Updated declaration for identifier: {declaration['Identifier']}")
+        else:
+            logger.info(f"Removing missing dataset identifier: {declaration['Identifier']}")
+    dashboard_json['DataSetIdentifierDeclarations'] = updated_declarations
+    logger.info(f"Dataset Identifier Declarations updated: {updated_declarations}")
+    return dashboard_json, updated_declarations
+
+
+def update_sheets(dashboard_json, available_datasets, assessment_id):
+    required_sheets = get_distinct_sheet_ids(available_datasets, assessment_id)
+    sheets_to_keep = set(required_sheets['SheetIds'])  # Extracting SheetIds from returned mappings
+    sheet_names_to_keep = set(required_sheets['SheetNames'])  # Extracting Sheet Names from returned mappings
+    logger.info(f"Sheets to keep based on dataset: {sheets_to_keep}")
+
+    updated_sheets = [
+        sheet for sheet in dashboard_json["Sheets"]
+        if sheet["SheetId"] in sheets_to_keep
+    ]
+
+    removed_sheets = [
+        sheet["Name"] for sheet in dashboard_json["Sheets"]
+        if sheet["SheetId"] not in sheets_to_keep
+    ]
+
+    if removed_sheets:
+        logger.info(f"Removed Sheet identifiers: {removed_sheets}")
+
+    dashboard_json["Sheets"] = updated_sheets
+    logger.info(f"Updated sheets: {updated_sheets}")
+    return dashboard_json, updated_sheets
+
+
+def update_calculated_fields(dashboard_json, updated_identifiers):
+    updated_calculated_fields = [
+        field for field in dashboard_json.get('CalculatedFields', [])
+        if field['DataSetIdentifier'] in updated_identifiers
+    ]
+
+    dashboard_json['CalculatedFields'] = updated_calculated_fields
+    logger.info(f"Updated calculated fields: {updated_calculated_fields}")
+    return dashboard_json
+
+
+def update_filter_groups(dashboard_json, updated_sheets):
+    if 'FilterGroups' in dashboard_json:
+        logger.info("FilterGroups found in dashboard_json")
+        filter_group_ids_to_keep = set(
+            fg_id for sheet in updated_sheets
+            if isinstance(sheet.get("FilterGroupId"), list)
+            for fg_id in sheet.get("FilterGroupId", [])
+        )
+        
+        updated_filter_groups = [
+            fg for fg in dashboard_json['FilterGroups']
+            if fg['FilterGroupId'] in filter_group_ids_to_keep
+        ]
+
+        dashboard_json['FilterGroups'] = updated_filter_groups
+        logger.info(f"Updated filter groups: {updated_filter_groups}")
+    return dashboard_json
+
+
+def update_column_configurations(dashboard_json, updated_identifiers):
+    updated_column_configurations = [
+        field for field in dashboard_json.get('ColumnConfigurations', [])
+        if field['DataSetIdentifier'] in updated_identifiers
+    ]
+
+    dashboard_json['ColumnConfigurations'] = updated_column_configurations
+    logger.info(f"Updated column configurations: {updated_column_configurations}")
+    return dashboard_json
+
+
+# Main function calling the refactored parts
+def update_dashboard_definition(assessment_id, available_datasets, dashboard_json, s3_client, s3_bucket):
+    dataset_map = create_dataset_map(available_datasets)
+
+    # Update dataset identifier declarations
+    dashboard_json, updated_declarations = update_dataset_identifier_declarations(dashboard_json, dataset_map)
+
+    # Update dataset and sheet ids
+    dashboard_json, updated_sheets = update_sheets(dashboard_json, available_datasets, assessment_id)
+
+    # Update calculated fields
+    updated_identifiers = {decl['Identifier'] for decl in updated_declarations}
+    dashboard_json = update_calculated_fields(dashboard_json, updated_identifiers)
+
+    # Update filter groups
+    dashboard_json = update_filter_groups(dashboard_json, updated_sheets)
+
+    # Update column configurations
+    dashboard_json = update_column_configurations(dashboard_json, updated_identifiers)
+
+    # (Optional) Upload to S3 if needed - this can also be a separate function if required
+    s3_key = f"{assessment_id}/dashboard_definition_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.json"
+
+    try:
+        s3_client.put_object(
+            Bucket=s3_bucket,
+            Key=s3_key,
+            Body=json.dumps(dashboard_json, indent=4),
+            ContentType='application/json'
+        )
+        logger.info(f"Dashboard definition uploaded to S3: {s3_bucket}/{s3_key}")
+    except Exception as e:
+        logger.error(f"Error uploading dashboard definition to S3: {e}")
+
+    return dashboard_json
+
+```
+
+
+available_datasets=['AssessmentParameterDataMapTable-dataset-template', 'AssessmentTable-dataset-template', 'ForceFlow-joined-dataset-template', 'Locations-dataset-template', 'POS-dataset-template', 'RD-I-POS-Location-dataset-template', 'RD-I-POS-Pallet-Requirement-dataset-template', 'RD-I-PaxLocationAll-dataset-template', 'RD-I-Ration-Costs-dataset-template', 'RD-IW-POS-Requirement-dataset-template', 'RD-IW-PaxLocationAll-dataset-template', 'RD-IW-Ration-Costs-dataset-template', 'aggregated-embark-dataset-template', 'cosi-embark-dataset-template', 'cosi-water-embark-dataset-template']
+
+
+
+```{python}
+
+
+# Define a function to extract FilterGroupIds from the dataset mappings
+def extract_filter_group_ids_from_mappings(available_datasets):
+    filter_group_ids = []
+    
+    # Assuming we have a function that gets dynamic mappings based on assessment_id
+    dataset_mappings = get_dynamic_mappings(available_datasets)
+
+    for dataset, details in dataset_mappings.items():
+        if isinstance(details, list):
+            # For multi-sheet datasets (like embark datasets)
+            for sheet in details:
+                if 'FilterGroupId' in sheet and sheet['FilterGroupId']:
+                    if isinstance(sheet['FilterGroupId'], list):
+                        filter_group_ids.extend(sheet['FilterGroupId'])  # Extend if it's a list
+                    else:
+                        filter_group_ids.append(sheet['FilterGroupId'])  # Append if it's a single string
+        else:
+            # For single-sheet datasets
+            if 'FilterGroupId' in details and details['FilterGroupId']:
+                if isinstance(details['FilterGroupId'], list):
+                    filter_group_ids.extend(details['FilterGroupId'])  # Extend if it's a list
+                else:
+                    filter_group_ids.append(details['FilterGroupId'])  # Append if it's a single string
+
+    return filter_group_ids
+
+  
+```
+
+
+```{python}
+
+available_datasets = available_datasets=['AssessmentParameterDataMapTable-dataset-template', 'AssessmentTable-dataset-template', 'ForceFlow-joined-dataset-template', 'Locations-dataset-template', 'POS-dataset-template']
+
+dashboard_definition_file = 'dashboard_definition.json'
+
+# Read in the dashboard definition from the file
+dashboard_definition = read_json_file(dashboard_definition_file)
+
+# Extract the FilterGroupIds
+filter_group_ids = extract_filter_group_ids_from_mappings(available_datasets)
+
+filter_group_ids
+```
+```{python}
+
+dashboard_definition['FilterGroups']
+
+```
+
+
+```{python}
+# Filter the dashboard's FilterGroups based on the extracted FilterGroupIds
+if 'FilterGroups' in dashboard_definition:
+    updated_filter_groups = [
+        fg for fg in dashboard_definition['FilterGroups']
+        if fg['FilterGroupId'] in filter_group_ids
+    ]
+else:
+    updated_filter_groups = []
+
+# Output the FilterGroups json
+print("Updated FilterGroupIds json:")
+print(json.dumps(updated_filter_groups, indent=4))
+
+
+```
+
+```{python}
+def convert_datasetID_to_identifier(available_datasets):
+    dataset_identifiers = []
+    for dataset in available_datasets:
+        assessment_id = dataset.split('-dataset-')[1]
+        identifier = dataset.replace('-', '_')
+        dataset_identifiers.append(identifier)
+    return dataset_identifiers
+
+available_datasets = available_datasets=['AssessmentParameterDataMapTable-dataset-template', 'AssessmentTable-dataset-template', 'ForceFlow-joined-dataset-template', 'Locations-dataset-template', 'POS-dataset-template']
+
+available_identifiers = convert_datasetID_to_identifier(available_datasets)
+
+dashboard_definition_file = 'dashboard_definition.json'
+
+# Read in the dashboard definition from the file
+dashboard_json = read_json_file(dashboard_definition_file)
+
+available_identifiers
+```
+
+
+```{python}
+
+dashboard_json['ColumnConfigurations']
+
+```
+
+
+```{python}
+# Extract the FilterGroupIds
+column_ids = [
+        field for field in dashboard_json.get('ColumnConfigurations', [])
+        if field['Column']['DataSetIdentifier'] in available_identifiers
+    ]
+
+column_ids
+
+```
+
+
+
+```{python}
+
+import boto3
+import json
+import os
+
+assessment_id = '0003TEST'
+new_dashboard_id = f"RD-Assessment-{assessment_id}"
+new_dashboard_name = f"RD_Assessment#{assessment_id}"
+
+
+# Get the directory of the current script
+current_dir = os.path.dirname(os.path.abspath(__name__))
+
+# Path to JSON file relative to the script's location
+dashboard_definition_path = os.path.join(current_dir, 'dashboard_definition.json')
+dashboard_def = read_json_file(dashboard_definition_path)
+
+
+available_datasets=['AssessmentParameterDataMapTable-dataset-template', 'AssessmentTable-dataset-template', 'ForceFlow-joined-dataset-template', 'Locations-dataset-template', 'POS-dataset-template']
+
+
+output_path = 'updated_dashboard_definition.json'
+
+
+# Update the dashboard definition
+updated_dashboard_definition = update_dashboard_definition(
+    assessment_id=assessment_id,
+    available_datasets=available_datasets,
+    dashboard_json=dashboard_def
+)
+
+# Write the updated dashboard definition to a file  
+with open(output_path, 'w') as file:
+    json.dump(updated_dashboard_definition, file, indent=2)
+
+
+```
+
+
+```{python}
+
+# Get the directory of the current script
+current_dir = os.path.dirname(os.path.abspath(__name__))
+
+# Path to JSON file relative to the script's location
+dashboard_definition_path = os.path.join(current_dir, 'updated_dashboard_definition.json')
+
+dashboard_definition = read_json_file(dashboard_definition_path)
+
+
+response = create_custom_dashboard_from_definition(
+    quicksight_client=quicksight_client,
+    aws_account_id=aws_account_id,
+    dashboard_id=new_dashboard_id,
+    dashboard_name=new_dashboard_name,
+    dashboard_definition=updated_dashboard_definition
+)
+
+# Print the response
+print(response)
+
+```
+
+```{bash}
+aws quicksight describe-dashboard-definition --dashboard-id 'RD-Assessment-template-test9' --aws-account-id xxxxxxxxxxxx > dashboard_definition_debug.json
+```
+
+```{bash delete-dashboards}
+
+aws quicksight delete-dashboard \
+  --aws-account-id $imat_account_id \
+  --dashboard-id RD-Assessment-template-test6 \
+  --profile quicksight
+
+```
+

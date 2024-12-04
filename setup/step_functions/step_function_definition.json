@@ -1,0 +1,167 @@
+{
+  "Comment": "QuickSight Dataset Processing Workflow",
+  "StartAt": "RouteToLambda",
+  "States": {
+    "RouteToLambda": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.file_name",
+          "StringEquals": "RD_I_POS_Pallet_Requirement.csv",
+          "Next": "InvokeCosiLambda"
+        },
+        {
+          "Variable": "$.file_name",
+          "StringEquals": "RD_IW_PaxLocationAll_joined.csv",
+          "Next": "InvokeCosiWaterLambda"
+        },
+        {
+          "Variable": "$.file_name",
+          "StringEquals": "RD_II_VII_DailyTE_WithDimensions.csv",
+          "Next": "InvokeCosiiViiLambda"
+        },
+        {
+          "Variable": "$.file_name",
+          "StringEquals": "RD_IV_Daily_Requirements.csv",
+          "Next": "InvokeCosivLambda"
+        },
+        {
+          "Variable": "$.file_name",
+          "StringEquals": "RD_VI_POS_Pallet_Requirement.csv",
+          "Next": "InvokeCosviLambda"
+        },
+        {
+          "Variable": "$.file_name",
+          "StringEquals": "RD_IIIP_POL_Pkg_NSN_Requirements_PBI.csv",
+          "Next": "InvokeCosiiipLambda"
+        },
+        {
+          "Variable": "$.file_name",
+          "StringEquals": "RD_IX_Requirement.csv",
+          "Next": "InvokeCosixLambda"
+        },
+        {
+          "Variable": "$.file_name",
+          "StringEquals": "AssessmentTable.csv",
+          "Next": "InvokePosLambda"
+        },
+        {
+          "Variable": "$.file_name",
+          "StringEquals": "POS.csv",
+          "Next": "InvokeForceFlowLambda"
+        },
+        {
+          "Variable": "$.file_name",
+          "StringMatches": "cos*.csv",
+          "Next": "InvokeAggEmbarkLambda"
+        }
+      ],
+      "Default": "NoMatchFound"
+    },
+    "InvokeCosiLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-cosi",
+      "Next": "CheckDatasetSyncCosi"
+    },
+    "InvokeCosiWaterLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-cosi-water",
+      "Next": "CheckDatasetSyncCosiWater"
+    },
+    "InvokeCosiiViiLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-cosii-vii",
+      "Next": "CheckDatasetSyncCosiiVii"
+    },
+    "InvokeCosivLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-cosiv",
+      "Next": "CheckDatasetSyncCosiv"
+    },
+    "InvokeCosviLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-cosvi",
+      "Next": "CheckDatasetSyncCosvi"
+    },
+    "InvokeCosiiipLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-cosiiip",
+      "Next": "CheckDatasetSyncCosiiip"
+    },
+    "InvokeCosixLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-cosix",
+      "Next": "CheckDatasetSyncCosix"
+    },
+    "InvokePosLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-pos",
+      "Next": "CheckDatasetSyncPos"
+    },
+    "InvokeForceFlowLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-force-flow",
+      "Next": "CheckDatasetSyncForceFlow"
+    },
+    "InvokeAggEmbarkLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-embark-agg",
+      "Next": "CheckDatasetSyncAggEmbark"
+    },
+    "CheckDatasetSyncCosi": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-reprocess",
+      "End": true
+    },
+    "CheckDatasetSyncCosiWater": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-reprocess",
+      "End": true
+    },
+    "CheckDatasetSyncCosiiVii": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-reprocess",
+      "End": true
+    },
+    "CheckDatasetSyncCosiv": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-reprocess",
+      "End": true
+    },
+    "CheckDatasetSyncCosvi": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-reprocess",
+      "End": true
+    },
+    "CheckDatasetSyncCosiiip": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-reprocess",
+      "End": true
+    },
+    "CheckDatasetSyncCosix": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-reprocess",
+      "End": true
+    },
+    "CheckDatasetSyncPos": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-reprocess",
+      "End": true
+    },
+    "CheckDatasetSyncForceFlow": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-reprocess",
+      "End": true
+    },
+    "CheckDatasetSyncAggEmbark": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:548995328310:function:step-reprocess",
+      "End": true
+    },
+    "NoMatchFound": {
+      "Type": "Fail",
+      "Error": "NoMatchFound",
+      "Cause": "No matching function found for the given file_name."
+    }
+  }
+}

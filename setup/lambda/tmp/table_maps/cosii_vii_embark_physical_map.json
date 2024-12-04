@@ -1,0 +1,100 @@
+{
+  "cosii-vii-embark-physicalTable": {
+    "S3Source": {
+      "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/cosii-vii-embark-datasource-template",
+      "UploadSettings": {
+        "Format": "CSV",
+        "StartFromRow": 1,
+        "ContainsHeader": true,
+        "TextQualifier": "DOUBLE_QUOTE",
+        "Delimiter": ","
+      },
+      "InputColumns": [
+        {
+          "Name": "CLASS_OF_SUPPLY",
+          "Type": "STRING"
+        },
+        {
+          "Name": "REGION",
+          "Type": "STRING"
+        },
+        {
+          "Name": "LOCATION_NAME",
+          "Type": "STRING"
+        },
+        {
+          "Name": "REGION_MEF_LEAD",
+          "Type": "STRING"
+        },
+        {
+          "Name": "COS_TYPE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "POS",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UI",
+          "Type": "STRING"
+        },
+        {
+          "Name": "QTY",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UNIT_PRICE",
+          "Type": "STRING"
+        },
+        {
+          "Name": "DIM.HEIGHT.INCHES",
+          "Type": "STRING"
+        },
+        {
+          "Name": "DIM.LENGTH.INCHES",
+          "Type": "STRING"
+        },
+        {
+          "Name": "DIM.WIDTH.INCHES",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ston_",
+          "Type": "STRING"
+        },
+        {
+          "Name": "sqft_",
+          "Type": "STRING"
+        },
+        {
+          "Name": "cuft_",
+          "Type": "STRING"
+        },
+        {
+          "Name": "teu_",
+          "Type": "STRING"
+        },
+        {
+          "Name": "CUFT",
+          "Type": "STRING"
+        },
+        {
+          "Name": "SQFT",
+          "Type": "STRING"
+        },
+        {
+          "Name": "TEUS",
+          "Type": "STRING"
+        },
+        {
+          "Name": "WEIGHT_LBS",
+          "Type": "STRING"
+        },
+        {
+          "Name": "TOTAL_COST",
+          "Type": "STRING"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,771 @@
+---
+title: "Serverless Database Setup w/AWS Athena"
+author: "Jerome Dixon"
+format:
+  html:
+    link-external-icon: true
+    link-external-newwindow: true
+    toc: true
+    toc-depth: 5
+    code-fold: true
+    code-summary: "Show the code"
+    embed-resources: true
+    default-image-extension: svg
+    dpi: 600
+    theme: spacelab
+---
+
+```{r include=FALSE}
+
+library(readr)
+library(dplyr)
+library(magrittr)
+library(here)
+library(stringr)
+library(DT)
+
+```
+
+### Source Data
+
+- download the latest WebFLIS data
+
+[CAGE.zip](https://www.dla.mil/Portals/104/Documents/InformationOperations/LogisticsInformationServices/FOIA/PUBLOG/CAGE.zip)
+
+[FREIGHT_PACKAGING.zip](https://www.dla.mil/Portals/104/Documents/InformationOperations/LogisticsInformationServices/FOIA/PUBLOG/FREIGHT_PACKAGING.zip)
+
+[REFERENCE.zip](https://www.dla.mil/Portals/104/Documents/InformationOperations/LogisticsInformationServices/FOIA/PUBLOG/REFERENCE.zip)
+
+#### Download and Unzip Files
+
+```{bash eval=FALSE}
+
+# download zip files to current directory
+curl -o CAGE.zip https://www.dla.mil/Portals/104/Documents/InformationOperations/LogisticsInformationServices/FOIA/PUBLOG/CAGE.zip
+
+curl -o FREIGHT_PACKAGING.zip https://www.dla.mil/Portals/104/Documents/InformationOperations/LogisticsInformationServices/FOIA/PUBLOG/FREIGHT_PACKAGING.zip
+
+curl -o REFERENCE.zip https://www.dla.mil/Portals/104/Documents/InformationOperations/LogisticsInformationServices/FOIA/PUBLOG/REFERENCE.zip
+
+```
+
+
+```{bash eval=FALSE}
+
+for zip_file in *.zip; do
+    folder_name="${zip_file%.*}"
+    mkdir -p "$folder_name"
+    unzip "$zip_file" -d "$folder_name"
+    echo "Extracted $zip_file to $folder_name/"
+done
+
+
+```
+
+```{bash eval=FALSE}
+
+# remove the zip files
+rm CAGE.zip
+rm FREIGHT_PACKAGING.zip
+rm REFERENCE.zip
+
+```
+
+#### Convert CSV to Parquet/Upload to S3
+
+```{python eval=FALSE}
+
+import pyarrow as pa
+import pyarrow.csv as csv
+import pyarrow.parquet as pq
+import boto3
+import io
+import os
+
+aws_profile = 'quicksight'
+session = boto3.Session(profile_name=aws_profile)
+s3 = session.client('s3')
+
+bucket_name = 'webflis-dimensional-data'
+
+# Define schemas for each table
+schemas = {
+    'p_cage': pa.schema([
+        ('CAGE_CODE', pa.string()),
+        ('CAGE_STATUS', pa.string()),
+        ('TYPE', pa.string()),
+        ('CAO', pa.string()),
+        ('COMPANY', pa.string()),
+        ('CITY', pa.string()),
+        ('STATE_PROVINCE', pa.string()),
+        ('ZIP_POSTAL_ZONE', pa.string()),
+        ('COUNTRY', pa.string())
+    ]),
+    'v_cage_address': pa.schema([
+        ('CAGE_CODE', pa.string()),
+        ('COMPANY_NAME', pa.string()),
+        ('COMPANY_NAME_2', pa.string()),
+        ('COMPANY_NAME_3', pa.string()),
+        ('COMPANY_NAME_4', pa.string()),
+        ('COMPANY_NAME_5', pa.string()),
+        ('STREET_ADDRESS_1', pa.string()),
+        ('STREET_ADDRESS_2', pa.string()),
+        ('PO_BOX', pa.string()),
+        ('CITY', pa.string()),
+        ('STATE', pa.string()),
+        ('ZIP', pa.string()),
+        ('COUNTRY', pa.string()),
+        ('DATE_EST', pa.string()),
+        ('LAST_UPDATE', pa.string()),
+        ('FORMER_NAME_1', pa.string()),
+        ('FORMER_NAME_2', pa.string()),
+        ('FORMER_NAME_3', pa.string()),
+        ('FORMER_NAME_4', pa.string()),
+        ('FRN_DOM', pa.string())
+    ]),
+    'v_cage_status_and_type': pa.schema([
+        ('CAGE_CODE', pa.string()),
+        ('STATUS', pa.string()),
+        ('TYPE', pa.string()),
+        ('CAO', pa.string()),
+        ('ADP', pa.string()),
+        ('PHONE', pa.string()),
+        ('FAX', pa.string()),
+        ('RPLM_CODE', pa.string()),
+        ('PARENT_CAGE', pa.string()),
+        ('ASSOC_CODE', pa.string()),
+        ('AFFIL_CODE', pa.string()),
+        ('BUS_SIZE', pa.string()),
+        ('PRIMARY_BUSINESS', pa.string()),
+        ('TYPE_OF_BUSINESS', pa.string()),
+        ('WOMAN_OWNED', pa.string()),
+        ('CNGRSL_DSTRCT', pa.string()),
+        ('DESIGNATOR', pa.string())
+    ]),
+    'v_dss_weight_and_cube': pa.schema([
+        ('NIIN', pa.string()),
+        ('DSS_WEIGHT', pa.float64()),
+        ('DSS_CUBE', pa.float64())
+    ]),
+    'v_flis_packaging_1': pa.schema([
+        ('NIIN', pa.string()),
+        ('PICA_SICA', pa.string()),
+        ('PKG_CAT', pa.string()),
+        ('UNPKG_ITEM_WEIGHT', pa.string()),
+        ('UNPKG_ITEM_DIM', pa.string()),
+        ('UI', pa.string()),
+        ('TOS', pa.string()),
+        ('ICQ', pa.string()),
+        ('MOP', pa.string()),
+        ('CLNG_DRYING', pa.string()),
+        ('PRES_MAT', pa.string()),
+        ('WRAP_MAT', pa.string()),
+        ('CUSH_DUN', pa.string()),
+        ('THK', pa.string()),
+        ('UNIT_CONT', pa.string()),
+        ('PKG_DATA_SOURCE', pa.string())
+    ]),
+    'v_flis_packaging_2': pa.schema([
+        ('NIIN', pa.string()),
+        ('PICA_SICA', pa.string()),
+        ('INTER_CONT', pa.string()),
+        ('UCL', pa.string()),
+        ('SPC_MKG', pa.string()),
+        ('LVL_A', pa.string()),
+        ('LVL_B', pa.string()),
+        ('LVL_C', pa.string()),
+        ('UNIT_PACK_WEIGHT', pa.string()),
+        ('UNIT_PACK_DIM', pa.string()),
+        ('UNIT_PACK_CUBE', pa.string()),
+        ('OPI', pa.string()),
+        ('SUPPLEMENTAL_INSTRUCTIONS', pa.string())
+    ]),
+    'v_flis_part': pa.schema([
+        ('NIIN', pa.string()),
+        ('PART_NUMBER', pa.string()),
+        ('CAGE_CODE', pa.string()),
+        ('CAGE_STATUS', pa.string()),
+        ('RNCC', pa.string()),
+        ('RNVC', pa.string()),
+        ('DAC', pa.string()),
+        ('RNAAC', pa.string()),
+        ('RNFC', pa.string()),
+        ('RNSC', pa.string()),
+        ('RNJC', pa.string()),
+        ('SADC', pa.string()),
+        ('HCC', pa.string()),
+        ('MSDS', pa.string()),
+        ('MEDALS', pa.string())
+    ])
+}
+
+
+def convert_csv_to_parquet(csv_file, parquet_key, schema):
+    try:
+        # Define convert options to treat '.' as null for float64 columns
+        column_types = {
+            'NIIN': pa.string(),
+            **{name: pa.float64() for name, dtype in zip(schema.names, schema.types) if dtype == pa.float64()}
+        }
+        convert_options = csv.ConvertOptions(
+            column_types=column_types,
+            null_values=['.']
+        )
+        convert_options = csv.ConvertOptions(
+            column_types=column_types,
+            null_values=['.']
+        )
+
+        # Read CSV file with specified schema and null handling
+        table = csv.read_csv(csv_file, convert_options=convert_options)
+
+        # Cast the table to the specified schema
+        table = table.cast(schema)
+
+        # Write Parquet file to an in-memory buffer
+        parquet_buffer = io.BytesIO()
+        pq.write_table(table, parquet_buffer)
+
+        # Upload Parquet file to S3
+        s3.put_object(Bucket=bucket_name, Key=parquet_key, Body=parquet_buffer.getvalue())
+        print(f"Successfully uploaded {parquet_key} to S3.")
+
+    except Exception as e:
+        print(f"Error processing {csv_file}: {e}")
+        
+        
+```
+
+
+```{python eval=FALSE}
+
+# Convert each CSV file to Parquet
+convert_csv_to_parquet('CAGE/P_CAGE.CSV', 'p_cage.parquet', schemas['p_cage'])
+convert_csv_to_parquet('CAGE/V_CAGE_ADDRESS.CSV', 'v_cage_address.parquet', schemas['v_cage_address'])
+convert_csv_to_parquet('CAGE/V_CAGE_STATUS_AND_TYPE.CSV', 'v_cage_status_and_type.parquet', schemas['v_cage_status_and_type'])
+convert_csv_to_parquet('FREIGHT_PACKAGING/V_DSS_WEIGHT_AND_CUBE.CSV', 'v_dss_weight_and_cube.parquet', schemas['v_dss_weight_and_cube'])
+convert_csv_to_parquet('FREIGHT_PACKAGING/V_FLIS_PACKAGING_1.CSV', 'v_flis_packaging_1.parquet', schemas['v_flis_packaging_1'])
+convert_csv_to_parquet('FREIGHT_PACKAGING/V_FLIS_PACKAGING_2.CSV', 'v_flis_packaging_2.parquet', schemas['v_flis_packaging_2'])
+convert_csv_to_parquet('REFERENCE/V_FLIS_PART.CSV', 'v_flis_part.parquet', schemas['v_flis_part'])
+
+```
+
+
+### Glue Crawler (AWS Console)
+
+![Glue Crawler](images/glue_crawler.png)
+
+</br>
+
+### Glue FLIS Database
+
+![Glue FLIS Database](images/glue_database.png)
+
+</br>
+
+```{python}
+
+import boto3
+
+aws_profile = 'quicksight'
+session = boto3.Session(profile_name=aws_profile)
+glue = session.client('glue')
+
+# run glue crawler webflis
+def run_glue_crawler(crawler_name, glue):
+    response = glue.start_crawler(Name=crawler_name)
+    print(f"Starting crawler: {crawler_name}")
+    return response
+
+run_glue_crawler('webflis-db', glue)
+
+```
+</br>
+
+### Glue Tables
+
+```{python}
+
+import boto3
+
+aws_profile = 'quicksight'
+region = 'us-east-1'
+session = boto3.Session(profile_name=aws_profile, region_name=region)
+
+# Initialize a Glue client
+glue = session.client('glue', region_name=region)
+
+# Specify database and table name
+database_name = 'flis'
+
+# Get list of tables in the database
+response = glue.get_tables(DatabaseName=database_name)
+
+# Extract table names
+table_names = [table['Name'] for table in response['TableList']]
+
+table_names
+
+```
+
+![Glue FLIS Tables](images/glue_tables.png)
+
+</br>
+
+### Glue Table Schema
+
+```{python}
+
+import boto3
+
+aws_profile = 'quicksight'
+region = 'us-east-1'
+session = boto3.Session(profile_name=aws_profile, region_name=region)
+
+# Initialize a Glue client
+glue = session.client('glue', region_name=region)
+
+# Specify database and table name
+database_name = 'flis'
+table_name = 'webflis_dimensional_data'
+
+# Get table schema
+response = glue.get_table(DatabaseName=database_name, Name=table_name)
+
+# Extract column information
+columns = response['Table']['StorageDescriptor']['Columns']
+
+# Print column names and data types
+for column in columns:
+    print(f"Column Name: {column['Name']}, Data Type: {column['Type']}")
+
+```
+
+```{bash eval=FALSE}
+
+# remove the files
+rm -rf CAGE
+rm -rf FREIGHT_PACKAGING
+rm -rf REFERENCE
+
+```
+
+</br>
+
+### Final AWS Athena Query
+
+#### NIINs
+
+```{python}
+
+import csv
+
+niin_file_path = 'missing_data_niins.csv'
+
+# Read NIINs from a CSV file
+def read_niins_from_csv(file_path):
+    with open(file_path, 'r') as file:
+        reader = csv.reader(file)
+        return [row[0] for row in reader]
+
+niins = read_niins_from_csv(niin_file_path)
+
+niin_list = ", ".join(f"'{niin}'" for niin in niins)
+
+niin_list
+
+```
+
+#### Query
+
+```{python eval=FALSE}
+
+import boto3
+import time
+import csv
+import os
+from datetime import datetime
+
+# Generate timestamp
+timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+# Create timestamped filename and save to environmental variable
+timestamped_filename = f'query_results_{timestamp}.csv'
+os.environ['TIMESTAMPED_FILENAME'] = timestamped_filename
+
+
+aws_profile = 'quicksight'
+region = 'us-east-1'
+session = boto3.Session(profile_name=aws_profile, region_name=region)
+athena_client = session.client('athena')
+s3_bucket = 'webflis-query-results'
+s3_output = 's3://webflis-query-results/'
+database = 'flis'
+
+
+# Function to run Athena query
+def run_athena_query(query, database):
+    response = athena_client.start_query_execution(
+        QueryString=query,
+        QueryExecutionContext={'Database': database},
+        ResultConfiguration={'OutputLocation': s3_output}
+    )
+    query_execution_id = response['QueryExecutionId']
+
+    while True:
+        query_status = athena_client.get_query_execution(QueryExecutionId=query_execution_id)
+        status = query_status['QueryExecution']['Status']['State']
+        if status in ['SUCCEEDED', 'FAILED', 'CANCELLED']:
+            break
+        time.sleep(5)
+
+    if status == 'SUCCEEDED':
+        return query_execution_id
+    else:
+        raise Exception(f"Query failed with status: {status}")
+
+
+# Function to process paginated results
+def process_results(query_execution_id):
+    results = []
+    response = athena_client.get_query_results(QueryExecutionId=query_execution_id)
+    headers = [col['Label'] for col in response['ResultSet']['ResultSetMetadata']['ColumnInfo']]
+
+    # Process each row
+    while True:
+        for row in response['ResultSet']['Rows'][1:]:  # Skip the header row on the first page
+            results.append(dict(zip(headers, [field.get('VarCharValue', '') for field in row['Data']])))
+        # Check for more pages
+        if 'NextToken' in response:
+            response = athena_client.get_query_results(QueryExecutionId=query_execution_id, NextToken=response['NextToken'])
+        else:
+            break
+    return results
+
+
+# Read NIINs from a CSV file
+def read_niins_from_csv(file_path):
+    with open(file_path, 'r') as file:
+        reader = csv.reader(file)
+        return [row[0] for row in reader]
+
+
+# Main function
+def process_niins():
+    query = f"""
+    SELECT 
+      niin,
+      array_join(array_agg(part_number), ', ') AS part_number,
+      array_join(array_agg(cage_code), ', ') AS cage_code,
+      array_join(array_agg(parent_cage), ', ') AS parent_cage,
+      array_join(array_agg(company_name), ', ') AS company_name,
+      array_join(array_agg(CAST(dss_weight AS VARCHAR)), ', ') AS dss_weight,
+      array_join(array_agg(CAST(dss_cube AS VARCHAR)), ', ') AS dss_cube,
+      array_join(array_agg(CAST(unpkg_item_weight AS VARCHAR)), ', ') AS unpkg_item_weight,
+      array_join(array_agg(unpkg_item_dim), ', ') AS unpkg_item_dim,
+      array_join(array_agg(CAST(unit_pack_weight AS VARCHAR)), ', ') AS unit_pack_weight,
+      array_join(array_agg(unit_pack_dim), ', ') AS unit_pack_dim,
+      array_join(array_agg(CAST(unit_pack_cube AS VARCHAR)), ', ') AS unit_pack_cube
+    FROM 
+      flis.webflis_dimensional_data
+    WHERE 
+      niin IN ('015143534', '005577409', '006008976', '015308724', '015372576', '015373769',
+      '015423029', '015790876', '015980829', '015785320', '016144913', '015640122',
+      '015980856', '015640952', '015791462', '015791479', '015596037', '016143307',
+      '016429980', '015920141', '015660376', '015987154', '015297966', '015750178',
+      '016591832', '016695727', '015048374', '015743914', '015690134', '015150672',
+      '015852735', '014745703', '015747228', '015822297', '016759565', '016760878',
+      'LF0633600', 'LF0637400', '014423232', '015761338', '000514070', '015361435',
+      '010232366', '015082786', '014907423', '015556342', '016745202', '007877000',
+      '015174792', '015982125', '016731471', '015755874', '016469242', '014802396',
+      '016920264', '016752195', '016918713', '016681255', '070003029', '015171055',
+      '010232714', '016681979', '015170364', '015170362', '015654472', '015044067',
+      '015420903', '016194610', '014852310', '015915779', '014551261', '015257205',
+      '015632597', '015234871', '015236533', '015122729', '015129285', '015350107',
+      '001032254', '013800690', '015638620', '002023639', '015122740', '015210291',
+      '015627515', '015369905', '014803982', '015750864', '014795893', '016730981',
+      '014953097', '016018069', '016788512', '015733394', '016306877', '015871979',
+      '016240410', '016918535', '016872153', '014715362', '014715364', '006341995',
+      '016159680', '009846210', '014945639', '015078747', '015103340', '015740696',
+      '015049675', '015589420', '015078762', '015078769', '015709746', '015740605',
+      '015740721', '015660958', '016179895', '015816955', '013688280', '014942316',
+      '015549530', '015525616', '016435172', '219129975', '011635165', '016162509',
+      '014791205', '200058054', '015874725', '219205262', '200058106', '015327129',
+      '016305129', '016663140', '015980779', '015981568', '016305128', '016598724',
+      '016412229', '016616649', '016275690', '016274887', '016731854', '016740020',
+      '015327060', '015057751', '015918059', '015919807', '015369873', '015865355',
+      '015374472', '016570187', '015790739', '015797840', '016706990', '015521774',
+      '015811586', '016062991', '016229604', '016226419', '016461726', '016756946',
+      '016229603', '016226420', '016467702', '015982190', '016684120', '015384375',
+      '016240698', '015270688', '015150649', '015206454', '015220795', '015795012',
+      '014808759', '015670901', '014808996', '000680502', '015100540', '007750127',
+      '011671137', '016823914', '000433408', '012164475', '016647167', '016647164',
+      '016647171', '016882749', '016885449', '016603213', '016603214', '016603218',
+      '016608356', '016874463', '016605177', '016605178', '016606554', '016608106',
+      '016799076', '016602964', '016292449')
+    GROUP BY 
+      niin
+    """
+
+    try:
+        query_execution_id = run_athena_query(query, database)
+        processed_results = process_results(query_execution_id)
+
+        # Check if there are results before writing to a CSV file
+        if not processed_results:
+            print("No results found for the query.")
+            return
+
+        # Write results to a CSV file
+        output_file = os.environ['TIMESTAMPED_FILENAME']
+        with open(output_file, 'w', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=processed_results[0].keys())
+            writer.writeheader()
+            writer.writerows(processed_results)
+
+        print(f"Results have been written to {output_file}")
+
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+
+
+```
+
+```{python eval=FALSE}
+
+process_niins()
+
+```
+- test2 (pass in a list)
+
+```{python include=FALSE}
+
+niins = read_niins_from_csv(niin_file_path)
+
+# Join NIINs as a properly formatted string for SQL without enclosing in double quotes
+niin_list = ", ".join(f"'{niin}'" for niin in niins)
+
+# Wrap the final list in parentheses for SQL compatibility
+niin_list = f"({niin_list})"
+
+# Print to verify (it should not have double quotes around the whole expression)
+print(niin_list)
+
+
+```
+
+
+```{python eval=FALSE, include=FALSE}
+
+import boto3
+import time
+import csv
+import os
+from datetime import datetime
+
+# Generate timestamp
+timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+# Create timestamped filename and save to environmental variable
+timestamped_filename = f'query_results_{timestamp}.csv'
+os.environ['TIMESTAMPED_FILENAME'] = timestamped_filename
+
+
+aws_profile = 'quicksight'
+region = 'us-east-1'
+session = boto3.Session(profile_name=aws_profile, region_name=region)
+athena_client = session.client('athena')
+s3_bucket = 'webflis-query-results'
+s3_output = 's3://webflis-query-results/'
+database = 'flis'
+
+
+# Function to run Athena query
+def run_athena_query(query, database):
+    response = athena_client.start_query_execution(
+        QueryString=query,
+        QueryExecutionContext={'Database': database},
+        ResultConfiguration={'OutputLocation': s3_output}
+    )
+    query_execution_id = response['QueryExecutionId']
+
+    while True:
+        query_status = athena_client.get_query_execution(QueryExecutionId=query_execution_id)
+        status = query_status['QueryExecution']['Status']['State']
+        if status in ['SUCCEEDED', 'FAILED', 'CANCELLED']:
+            break
+        time.sleep(5)
+
+    if status == 'SUCCEEDED':
+        return query_execution_id
+    else:
+        raise Exception(f"Query failed with status: {status}")
+
+
+# Function to process paginated results
+def process_results(query_execution_id):
+    results = []
+    response = athena_client.get_query_results(QueryExecutionId=query_execution_id)
+    headers = [col['Label'] for col in response['ResultSet']['ResultSetMetadata']['ColumnInfo']]
+
+    # Process each row
+    while True:
+        for row in response['ResultSet']['Rows'][1:]:  # Skip the header row on the first page
+            results.append(dict(zip(headers, [field.get('VarCharValue', '') for field in row['Data']])))
+        # Check for more pages
+        if 'NextToken' in response:
+            response = athena_client.get_query_results(QueryExecutionId=query_execution_id, NextToken=response['NextToken'])
+        else:
+            break
+    return results
+
+
+# Read NIINs from a CSV file
+def read_niins_from_csv(file_path):
+    with open(file_path, 'r') as file:
+        reader = csv.reader(file)
+        return [row[0] for row in reader]
+
+
+# Main function
+def process_niins2(niin_file_path):
+    niins = read_niins_from_csv(niin_file_path)
+    niin_list = ", ".join(f"'{niin}'" for niin in niins)
+    niin_list = f"({niin_list})"
+    query = f"""
+    SELECT 
+      niin,
+      array_join(array_agg(part_number), ', ') AS part_number,
+      array_join(array_agg(cage_code), ', ') AS cage_code,
+      array_join(array_agg(parent_cage), ', ') AS parent_cage,
+      array_join(array_agg(company_name), ', ') AS company_name,
+      array_join(array_agg(CAST(dss_weight AS VARCHAR)), ', ') AS dss_weight,
+      array_join(array_agg(CAST(dss_cube AS VARCHAR)), ', ') AS dss_cube,
+      array_join(array_agg(CAST(unpkg_item_weight AS VARCHAR)), ', ') AS unpkg_item_weight,
+      array_join(array_agg(unpkg_item_dim), ', ') AS unpkg_item_dim,
+      array_join(array_agg(CAST(unit_pack_weight AS VARCHAR)), ', ') AS unit_pack_weight,
+      array_join(array_agg(unit_pack_dim), ', ') AS unit_pack_dim,
+      array_join(array_agg(CAST(unit_pack_cube AS VARCHAR)), ', ') AS unit_pack_cube
+    FROM 
+      flis.webflis_dimensional_data
+    WHERE 
+      niin IN {{niin_list}}
+    GROUP BY 
+      niin
+    """
+
+    try:
+        query_execution_id = run_athena_query(query, database)
+        processed_results = process_results(query_execution_id)
+
+        # Check if there are results before writing to a CSV file
+        if not processed_results:
+            print("No results found for the query.")
+            return
+
+        # Write results to a CSV file
+        output_file = os.environ['TIMESTAMPED_FILENAME']
+        with open(output_file, 'w', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=processed_results[0].keys())
+            writer.writeheader()
+            writer.writerows(processed_results)
+
+        print(f"Results have been written to {output_file}")
+
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+
+
+```
+
+
+```{python eval=FALSE, include=FALSE}
+
+niin_file_path = 'missing_data_niins.csv'
+
+process_niins2(niin_file_path)
+
+```
+
+## DLA FLIS Dimensional Data (PUBLOG/WebFLIS)
+
+```{r}
+
+filename <- Sys.getenv("TIMESTAMPED_FILENAME")
+
+file_path <- here(filename)
+
+query_results <- read_csv(file_path, show_col_types = FALSE)
+
+query_results %<>% 
+  select(1:3,6,7) %>% 
+  mutate(niin = str_trim(niin),
+         part_number = str_trim(part_number),
+         cage_code = str_trim(cage_code),
+         dss_weight = str_trim(dss_weight),
+         dss_cube = str_trim(dss_cube)
+  )
+
+query_results %>% 
+  datatable(extensions = 'Buttons', 
+            options = list(dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel', 'pdf', 'print')),
+            rownames = FALSE)
+
+```
+
+### AWS Glue Temp Table {.hidden .unnumbered .unlisted}
+
+```{python eval=FALSE}
+
+aws_profile = 'quicksight'
+region = 'us-east-1'
+session = boto3.Session(profile_name=aws_profile, region_name=region)
+athena_client = session.client('athena')
+s3_bucket = 'webflis-query-results'
+s3_output = 's3://webflis-query-results/'
+database = 'flis'
+
+
+niin_values = ", ".join([f"('{niin}')" for niin in niins])
+
+# SQL query to create the temporary NIIN table with NIINs as string
+create_temp_table_query = f"""
+CREATE TABLE flis.temp_niin_table AS
+SELECT CAST(niin2 AS VARCHAR) AS niin2
+FROM (VALUES {niin_values}) AS tmp (niin2)
+"""
+
+
+# Function to run Athena queries
+def run_athena_query(query):
+    response = athena_client.start_query_execution(
+        QueryString=query,
+        QueryExecutionContext={'Database': database},
+        ResultConfiguration={'OutputLocation': s3_output}
+    )
+    query_execution_id = response['QueryExecutionId']
+    
+    # Wait for the query to complete
+    while True:
+        query_status = athena_client.get_query_execution(QueryExecutionId=query_execution_id)
+        status = query_status['QueryExecution']['Status']['State']
+        if status in ['SUCCEEDED', 'FAILED', 'CANCELLED']:
+            break
+        time.sleep(5)
+    
+    if status == 'SUCCEEDED':
+        print("Temporary NIIN table created successfully.")
+    else:
+        raise Exception(f"Query failed with status: {status}")
+
+# Run the query to create the temporary NIIN table
+run_athena_query(create_temp_table_query)
+
+```
+
+```{python eval=FALSE}
+
+drop_table_query = "DROP TABLE flis.temp_niin_table"
+run_athena_query(drop_table_query, database)
+
+```

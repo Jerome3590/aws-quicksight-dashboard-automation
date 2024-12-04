@@ -1,0 +1,255 @@
+{
+  "RD-I-POS-Pallet-Requirement-logicalTable": {
+    "Alias": "RD_I_POS_Pallet_Requirement_template",
+    "DataTransforms": [
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "AssessmentNumber",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Class_of_Supply",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Ration_Type",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Region",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "TagColumnOperation": {
+          "ColumnName": "Region",
+          "Tags": [
+            {
+              "ColumnGeographicRole": "STATE"
+            }
+          ]
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Region_MEF_Lead",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "TagColumnOperation": {
+          "ColumnName": "Region_MEF_Lead",
+          "Tags": [
+            {
+              "ColumnGeographicRole": "STATE"
+            }
+          ]
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CAP_Name",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "CAP_Names",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Location_ID",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Location_Name",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "BEYOND",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Unit.of.Issue",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS1_Units",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS2_Units",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS3_Units",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS1_Units_Pallet_Qty",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS2_Units_Pallet_Qty",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS3_Units_Pallet_Qty",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS1_Units_Pallet_Tot_CuFT",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS2_Units_Pallet_Tot_CuFT",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS3_Units_Pallet_Tot_CuFT",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS1_Units_Pallet_Tot_Wt.lbs.",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS2_Units_Pallet_Tot_Wt.lbs.",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS3_Units_Pallet_Tot_Wt.lbs.",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS1_Units_Pallet_Tot_TEUs",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS2_Units_Pallet_Tot_TEUs",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS3_Units_Pallet_Tot_TEUs",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS1_Units_Pallet_Tot_FEUs",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS2_Units_Pallet_Tot_FEUs",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS3_Units_Pallet_Tot_FEUs",
+          "NewColumnType": "DECIMAL",
+          "SubType": "FIXED"
+        }
+      },
+      {
+        "ProjectOperation": {
+          "ProjectedColumns": [
+            "AssessmentNumber",
+            "Class_of_Supply",
+            "Ration_Type",
+            "Region",
+            "Region_MEF_Lead",
+            "CAP_Name",
+            "CAP_Names",
+            "Location_ID",
+            "Location_Name",
+            "BEYOND",
+            "Unit.of.Issue",
+            "DOS1_Units",
+            "DOS2_Units",
+            "DOS3_Units",
+            "DOS1_Units_Pallet_Qty",
+            "DOS2_Units_Pallet_Qty",
+            "DOS3_Units_Pallet_Qty",
+            "DOS1_Units_Pallet_Tot_CuFT",
+            "DOS2_Units_Pallet_Tot_CuFT",
+            "DOS3_Units_Pallet_Tot_CuFT",
+            "DOS1_Units_Pallet_Tot_Wt.lbs.",
+            "DOS2_Units_Pallet_Tot_Wt.lbs.",
+            "DOS3_Units_Pallet_Tot_Wt.lbs.",
+            "DOS1_Units_Pallet_Tot_TEUs",
+            "DOS2_Units_Pallet_Tot_TEUs",
+            "DOS3_Units_Pallet_Tot_TEUs",
+            "DOS1_Units_Pallet_Tot_FEUs",
+            "DOS2_Units_Pallet_Tot_FEUs",
+            "DOS3_Units_Pallet_Tot_FEUs"
+          ]
+        }
+      }
+    ],
+    "Source": {
+      "PhysicalTableId": "RD-I-POS-Pallet-Requirement-physicalTable"
+    }
+  }
+}

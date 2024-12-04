@@ -1,0 +1,152 @@
+{
+  "AssessmentTable-physicalTable": {
+    "S3Source": {
+      "DataSourceArn": "arn:aws:quicksight:us-east-1:548995328310:datasource/AssessmentTable-datasource-template",
+      "UploadSettings": {
+        "Format": "CSV",
+        "StartFromRow": 1,
+        "ContainsHeader": true,
+        "TextQualifier": "DOUBLE_QUOTE",
+        "Delimiter": ","
+      },
+      "InputColumns": [
+        {
+          "Name": "ID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "AssessmentNumber",
+          "Type": "STRING"
+        },
+        {
+          "Name": "AppianFolderID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "AssessmentTypeID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Description",
+          "Type": "STRING"
+        },
+        {
+          "Name": "OperationDuration",
+          "Type": "STRING"
+        },
+        {
+          "Name": "OperationStartDate",
+          "Type": "STRING"
+        },
+        {
+          "Name": "OperationEndDate",
+          "Type": "STRING"
+        },
+        {
+          "Name": "MarforOrganizationID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "SupportedCCMDID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "PrepoEquipDayRange",
+          "Type": "STRING"
+        },
+        {
+          "Name": "GenerateJFRG",
+          "Type": "STRING"
+        },
+        {
+          "Name": "S3FolderLink",
+          "Type": "STRING"
+        },
+        {
+          "Name": "StatusID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "StepID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Title",
+          "Type": "STRING"
+        },
+        {
+          "Name": "Year",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UseMpf",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UseMcppn",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UseLform",
+          "Type": "STRING"
+        },
+        {
+          "Name": "DefaultTheaterStartDay",
+          "Type": "STRING"
+        },
+        {
+          "Name": "SourcingStepID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "RiskStepID",
+          "Type": "STRING"
+        },
+        {
+          "Name": "SourcingAnalysisStartDate",
+          "Type": "STRING"
+        },
+        {
+          "Name": "SourcingAnalysisEndDate",
+          "Type": "STRING"
+        },
+        {
+          "Name": "CreatedBy",
+          "Type": "STRING"
+        },
+        {
+          "Name": "CreatedOn",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UpdatedBy",
+          "Type": "STRING"
+        },
+        {
+          "Name": "UpdatedOn",
+          "Type": "STRING"
+        },
+        {
+          "Name": "IsArchived",
+          "Type": "STRING"
+        },
+        {
+          "Name": "LeadMarforUIC",
+          "Type": "STRING"
+        },
+        {
+          "Name": "LeadMarforName",
+          "Type": "STRING"
+        },
+        {
+          "Name": "DefaultUnitFactor",
+          "Type": "STRING"
+        },
+        {
+          "Name": "ProjectCode",
+          "Type": "STRING"
+        }
+      ]
+    }
+  }
+}

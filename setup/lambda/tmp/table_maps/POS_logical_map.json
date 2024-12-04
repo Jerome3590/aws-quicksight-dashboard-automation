@@ -1,0 +1,51 @@
+{
+  "POS-logicalTable": {
+    "Alias": "POS_template",
+    "DataTransforms": [
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "X",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "POS",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "DOS",
+          "NewColumnType": "STRING"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Period",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "CastColumnTypeOperation": {
+          "ColumnName": "Sort_Index",
+          "NewColumnType": "INTEGER"
+        }
+      },
+      {
+        "ProjectOperation": {
+          "ProjectedColumns": [
+            "X",
+            "POS",
+            "DOS",
+            "Period",
+            "Sort_Index"
+          ]
+        }
+      }
+    ],
+    "Source": {
+      "PhysicalTableId": "POS-physicalTable"
+    }
+  }
+}
